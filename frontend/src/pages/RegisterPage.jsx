@@ -165,7 +165,7 @@ export default function RegisterPage() {
 
         <div className="mt-6 text-center text-xs">
           <Link to="/" className="text-slate-500 hover:text-slate-300">
-            ← Quay lại Trang chủ
+            Quay lại Trang chủ
           </Link>
         </div>
       </div>

@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import ActiveMembershipCard from '../../components/dashboard/profile/ActiveMembershipCard';
 import ProfileForm from '../../components/dashboard/profile/ProfileForm';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [activeSubs, setActiveSubs] = useState([]);
-  const [message, setMessage] = useState({ type: '', text: '' });
+  const toast = useToast();
+  const setMessage = ({ type, text }) => {
+    if (!text) return;
+    if (type === 'error') toast.error(text);
+    else if (type === 'warning') toast.warning(text);
+    else toast.success(text);
+  };
   const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -104,19 +111,6 @@ export default function ProfilePage() {
         <h2 className="text-xl sm:text-2xl font-black text-white">Hồ Sơ Cá Nhân & Thẻ Thành Viên</h2>
         <p className="text-xs text-slate-400">Quản lý thông tin cá nhân, chỉ số thể chất và gói tập của bạn</p>
       </div>
-
-      {message.text && (
-        <div
-          className={`p-3 rounded-xl text-xs flex items-center justify-between ${
-            message.type === 'success'
-              ? 'bg-emerald-950/50 border border-emerald-800 text-emerald-300'
-              : 'bg-rose-950/50 border border-rose-800 text-rose-300'
-          }`}
-        >
-          <span>{message.text}</span>
-          <button type="button" onClick={() => setMessage({ type: '', text: '' })}>✕</button>
-        </div>
-      )}
 
       <ActiveMembershipCard activeSubs={activeSubs} />
 

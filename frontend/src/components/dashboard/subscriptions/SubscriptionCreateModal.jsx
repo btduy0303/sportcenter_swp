@@ -23,7 +23,7 @@ export default function SubscriptionCreateModal({
           onClick={onClose}
           className="absolute top-5 right-5 text-slate-400 hover:text-white text-lg p-1"
         >
-          ✕
+          Đóng
         </button>
 
         <h3 className="text-xl font-bold text-white mb-1">Đăng Ký Gói Tập Mới</h3>

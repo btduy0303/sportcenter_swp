@@ -59,7 +59,16 @@ export default function UsersPage() {
       if (Array.isArray(data) && roleFilter) {
         data = data.filter((u) => u.role === roleFilter);
       }
-      setUsers(Array.isArray(data) ? data : []);
+      // Normalize isActive / active: Spring Boot Jackson serializes boolean isActive as either 'active' or 'isActive'
+      const normalizedUsers = (Array.isArray(data) ? data : []).map((u) => {
+        const isActiveStatus = u.isActive !== undefined ? Boolean(u.isActive) : Boolean(u.active);
+        return {
+          ...u,
+          isActive: isActiveStatus,
+          active: isActiveStatus,
+        };
+      });
+      setUsers(normalizedUsers);
     } catch (e) {
       toast.error(e.message || 'Không thể tải danh sách người dùng');
     }

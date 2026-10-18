@@ -4,6 +4,18 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import CountdownConfirmModal from '../../components/common/CountdownConfirmModal';
 
+import ScheduleGrid from '../../components/dashboard/classes/ScheduleGrid';
+import SportClassTable from '../../components/dashboard/classes/SportClassTable';
+import CategoryManager from '../../components/dashboard/classes/CategoryManager';
+import RoomManager from '../../components/dashboard/classes/RoomManager';
+import RegistrationHistoryTable from '../../components/dashboard/classes/RegistrationHistoryTable';
+
+import ClassFormModal from '../../components/dashboard/classes/ClassFormModal';
+import ScheduleFormModal from '../../components/dashboard/classes/ScheduleFormModal';
+import CategoryFormModal from '../../components/dashboard/classes/CategoryFormModal';
+import RoomFormModal from '../../components/dashboard/classes/RoomFormModal';
+import ReceptionistRegisterModal from '../../components/dashboard/classes/ReceptionistRegisterModal';
+
 export default function ClassesPage() {
   const { user, isManager, isReceptionist, isMember } = useAuth();
   const toast = useToast();
@@ -105,7 +117,6 @@ export default function ClassesPage() {
   const loadInitialData = async () => {
     setLoading(true);
     try {
-      // Load categories & rooms for options
       const [catsRes, roomsRes] = await Promise.all([
         api.getSportCategories().catch(() => []),
         api.getRooms().catch(() => []),
@@ -113,18 +124,16 @@ export default function ClassesPage() {
       setCategories(Array.isArray(catsRes) ? catsRes : []);
       setRooms(Array.isArray(roomsRes) ? roomsRes : []);
 
-      // Load classes
       if (isManager) {
         const [clsRes, accsRes] = await Promise.all([
           api.getSportClasses().catch(() => []),
           api.getAllAccounts().catch(() => []),
         ]);
         setClasses(Array.isArray(clsRes) ? clsRes : []);
-        const coachList = Array.isArray(accsRes) ? accsRes.filter(a => a.role === 'COACH') : [];
+        const coachList = Array.isArray(accsRes) ? accsRes.filter((a) => a.role === 'COACH') : [];
         setCoaches(coachList);
       }
 
-      // Load schedules
       if (isCoach) {
         const myScheds = await api.getCoachMySchedules().catch(() => []);
         setSchedules(Array.isArray(myScheds) ? myScheds : []);
@@ -133,20 +142,14 @@ export default function ClassesPage() {
         setSchedules(Array.isArray(allScheds) ? allScheds : []);
       }
 
-      // Load registrations for Member
       if (isMember) {
         const myRegs = await api.getMyClassRegistrations().catch(() => []);
         setMyRegistrations(Array.isArray(myRegs) ? myRegs : []);
       }
 
-      // Load members for Receptionist only (Manager calls getAllAccounts)
       if (user?.role === 'RECEPTIONIST') {
         const mems = await api.searchReceptionistMembers('').catch(() => []);
         setMembers(Array.isArray(mems) ? mems : []);
-      } else if (isManager) {
-        const mems = await api.getAllAccounts().catch(() => []);
-        const onlyMems = Array.isArray(mems) ? mems.filter(u => u.role === 'MEMBER') : [];
-        setMembers(onlyMems);
       }
     } catch (e) {
       console.error(e);
@@ -164,8 +167,7 @@ export default function ClassesPage() {
       const updatedRegs = await api.getMyClassRegistrations();
       setMyRegistrations(Array.isArray(updatedRegs) ? updatedRegs : []);
     } catch (err) {
-      // If capacity full and not yet waitlist, prompt user
-      if (err.message && err.message.toLowerCase().includes('đầy') || err.message.toLowerCase().includes('capacity')) {
+      if ((err.message && err.message.toLowerCase().includes('đầy')) || err.message?.toLowerCase().includes('capacity')) {
         setConfirmModal({
           isOpen: true,
           title: 'Lớp học đã đủ sĩ số',
@@ -222,10 +224,13 @@ export default function ClassesPage() {
       return;
     }
     try {
-      await api.registerMemberClassByReceptionist({
-        userId: Number(receptionistRegForm.memberId),
-        classId: Number(receptionistRegForm.classId),
-      }, receptionistRegForm.joinWaitlist);
+      await api.registerMemberClassByReceptionist(
+        {
+          userId: Number(receptionistRegForm.memberId),
+          classId: Number(receptionistRegForm.classId),
+        },
+        receptionistRegForm.joinWaitlist
+      );
       showMsg('Lễ tân đăng ký lớp cho hội viên thành công!');
       setIsReceptionistRegModalOpen(false);
       handleLoadMemberRegistrations(receptionistRegForm.memberId);
@@ -238,10 +243,13 @@ export default function ClassesPage() {
           confirmText: 'Vào Waitlist',
           type: 'warning',
           action: async () => {
-            await api.registerMemberClassByReceptionist({
-              userId: Number(receptionistRegForm.memberId),
-              classId: Number(receptionistRegForm.classId),
-            }, true);
+            await api.registerMemberClassByReceptionist(
+              {
+                userId: Number(receptionistRegForm.memberId),
+                classId: Number(receptionistRegForm.classId),
+              },
+              true
+            );
             showMsg('Đã đưa hội viên vào Waitlist thành công!');
             setIsReceptionistRegModalOpen(false);
             handleLoadMemberRegistrations(receptionistRegForm.memberId);
@@ -275,7 +283,6 @@ export default function ClassesPage() {
   };
 
   // ==================== MANAGER CRUD ====================
-  // 1. Sport Class
   const handleSaveClass = async (e) => {
     e.preventDefault();
     try {
@@ -290,7 +297,7 @@ export default function ClassesPage() {
       };
 
       if (editingItem) {
-        await api.updateSportClass(editingItem.id, payload);
+        await api.updateSportClass(editingItem.id, { ...payload, status: editingItem.status || 'ACTIVE' });
         showMsg('Cập nhật thông tin lớp học thành công!');
       } else {
         await api.createSportClass(payload);
@@ -305,7 +312,6 @@ export default function ClassesPage() {
     }
   };
 
-  // 2. Class Schedule
   const handleSaveSchedule = async (e) => {
     e.preventDefault();
     try {
@@ -353,7 +359,6 @@ export default function ClassesPage() {
     });
   };
 
-  // 3. Sport Category
   const handleSaveCategory = async (e) => {
     e.preventDefault();
     try {
@@ -393,7 +398,6 @@ export default function ClassesPage() {
     });
   };
 
-  // 4. Room
   const handleSaveRoom = async (e) => {
     e.preventDefault();
     try {
@@ -450,7 +454,7 @@ export default function ClassesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
           <h1 className="text-2xl font-black text-white flex items-center gap-2">
-            <span>🏋️‍♂️</span> Lớp học & Thời khóa biểu
+            Lớp học & Thời khóa biểu
           </h1>
           <p className="text-sm text-slate-400 mt-1">
             Quản lý lịch mở lớp, huấn luyện viên phụ trách, phòng tập và đăng ký tham gia lớp học
@@ -462,6 +466,7 @@ export default function ClassesPage() {
           {isManager && (
             <>
               <button
+                type="button"
                 onClick={() => {
                   setEditingItem(null);
                   setClassForm({
@@ -477,10 +482,11 @@ export default function ClassesPage() {
                 }}
                 className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs transition shadow-lg shadow-emerald-500/20 flex items-center gap-1.5"
               >
-                <span>➕</span> Tạo lớp học
+                Tạo lớp học
               </button>
 
               <button
+                type="button"
                 onClick={() => {
                   setEditingItem(null);
                   setScheduleForm({
@@ -494,13 +500,14 @@ export default function ClassesPage() {
                 }}
                 className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition shadow-lg shadow-blue-500/20 flex items-center gap-1.5"
               >
-                <span>📅</span> Xếp ca học
+                Xếp ca học
               </button>
             </>
           )}
 
           {isReceptionist && (
             <button
+              type="button"
               onClick={() => {
                 setReceptionistRegForm({
                   memberId: members[0]?.id || '',
@@ -517,16 +524,16 @@ export default function ClassesPage() {
         </div>
       </div>
 
-
-
       {/* Navigation Tabs */}
       <div className="flex border-b border-slate-800 gap-2 overflow-x-auto pb-1 text-sm font-medium">
         <button
+          type="button"
           onClick={() => setActiveTab('schedules')}
-          className={`px-4 py-2.5 rounded-lg transition whitespace-nowrap ${activeTab === 'schedules'
-            ? 'bg-slate-800 text-white font-bold border-b-2 border-emerald-500'
-            : 'text-slate-400 hover:text-white hover:bg-slate-900/50'
-            }`}
+          className={`px-4 py-2.5 rounded-lg transition whitespace-nowrap ${
+            activeTab === 'schedules'
+              ? 'bg-slate-800 text-white font-bold border-b-2 border-emerald-500'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900/50'
+          }`}
         >
           Thời khóa biểu & Ca học ({schedules.length})
         </button>
@@ -534,29 +541,35 @@ export default function ClassesPage() {
         {isManager && (
           <>
             <button
+              type="button"
               onClick={() => setActiveTab('classes')}
-              className={`px-4 py-2.5 rounded-lg transition whitespace-nowrap ${activeTab === 'classes'
-                ? 'bg-slate-800 text-white font-bold border-b-2 border-emerald-500'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900/50'
-                }`}
+              className={`px-4 py-2.5 rounded-lg transition whitespace-nowrap ${
+                activeTab === 'classes'
+                  ? 'bg-slate-800 text-white font-bold border-b-2 border-emerald-500'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-900/50'
+              }`}
             >
               Lớp thể thao ({classes.length})
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab('categories')}
-              className={`px-4 py-2.5 rounded-lg transition whitespace-nowrap ${activeTab === 'categories'
-                ? 'bg-slate-800 text-white font-bold border-b-2 border-emerald-500'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900/50'
-                }`}
+              className={`px-4 py-2.5 rounded-lg transition whitespace-nowrap ${
+                activeTab === 'categories'
+                  ? 'bg-slate-800 text-white font-bold border-b-2 border-emerald-500'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-900/50'
+              }`}
             >
               Bộ môn ({categories.length})
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab('rooms')}
-              className={`px-4 py-2.5 rounded-lg transition whitespace-nowrap ${activeTab === 'rooms'
-                ? 'bg-slate-800 text-white font-bold border-b-2 border-emerald-500'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900/50'
-                }`}
+              className={`px-4 py-2.5 rounded-lg transition whitespace-nowrap ${
+                activeTab === 'rooms'
+                  ? 'bg-slate-800 text-white font-bold border-b-2 border-emerald-500'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-900/50'
+              }`}
             >
               Phòng tập ({rooms.length})
             </button>
@@ -565,11 +578,13 @@ export default function ClassesPage() {
 
         {(isMember || isReceptionist) && (
           <button
+            type="button"
             onClick={() => setActiveTab('registrations')}
-            className={`px-4 py-2.5 rounded-lg transition whitespace-nowrap ${activeTab === 'registrations'
-              ? 'bg-slate-800 text-white font-bold border-b-2 border-emerald-500'
-              : 'text-slate-400 hover:text-white hover:bg-slate-900/50'
-              }`}
+            className={`px-4 py-2.5 rounded-lg transition whitespace-nowrap ${
+              activeTab === 'registrations'
+                ? 'bg-slate-800 text-white font-bold border-b-2 border-emerald-500'
+                : 'text-slate-400 hover:text-white hover:bg-slate-900/50'
+            }`}
           >
             {isMember ? 'Lớp tôi đã đăng ký' : 'Lịch sử đăng ký lớp của Hội viên'}
           </button>
@@ -579,7 +594,6 @@ export default function ClassesPage() {
       {/* ===================== TAB 1: SCHEDULES ===================== */}
       {activeTab === 'schedules' && (
         <div className="space-y-4">
-          {/* Schedule Filters */}
           <div className="flex flex-wrap items-center gap-3 bg-slate-900/60 p-3 rounded-xl border border-slate-800 text-xs">
             <span className="text-slate-400 font-semibold">Lọc theo thứ:</span>
             <select
@@ -608,827 +622,190 @@ export default function ClassesPage() {
                 </option>
               ))}
             </select>
+
+            {(selectedDay || selectedCategoryFilter) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedDay('');
+                  setSelectedCategoryFilter('');
+                }}
+                className="text-emerald-400 hover:underline font-semibold ml-auto"
+              >
+                Đặt lại bộ lọc
+              </button>
+            )}
           </div>
 
-          {/* Schedule Cards / Table */}
-          {loading ? (
-            <div className="py-12 text-center text-slate-500">Đang tải lịch học...</div>
-          ) : filteredSchedules.length === 0 ? (
-            <div className="py-12 text-center bg-slate-900/30 rounded-2xl border border-slate-800/80">
-              <p className="text-slate-400">Không có lịch học nào phù hợp với bộ lọc hiện tại.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredSchedules.map((s) => (
-                <div
-                  key={s.id}
-                  className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 flex flex-col justify-between transition group shadow-md"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        {s.dayOfWeekName || dayNames[s.dayOfWeek] || `Thứ ${s.dayOfWeek}`}
-                      </span>
-                      <span className="text-xs font-mono text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded">
-                        {s.startTime?.slice(0, 5)} - {s.endTime?.slice(0, 5)}
-                      </span>
-                    </div>
-
-                    <div>
-                      <h3 className="text-base font-bold text-white group-hover:text-emerald-400 transition">
-                        {s.className}
-                      </h3>
-                      <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
-                        <span className="text-indigo-400 font-medium">🏅 {s.categoryName}</span>
-                        <span>•</span>
-                        <span className="text-amber-400 font-medium">Cấp độ: {s.level}</span>
-                      </p>
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-800/80 text-xs space-y-1.5 text-slate-300">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400">HLV Phụ trách:</span>
-                        <span className="font-semibold text-white">👨‍🏫 {s.coachName || 'Chưa phân công'}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400">Phòng học:</span>
-                        <span className="font-semibold text-white">
-                          📍 {s.roomName} (Tầng {s.floor || '1'})
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400">Sức chứa phòng / Lớp:</span>
-                        <span className="font-mono text-slate-300">
-                          {s.classMaxCapacity || 20} người
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="pt-4 mt-4 border-t border-slate-800 flex items-center justify-between">
-                    {isMember && (
-                      <button
-                        onClick={() => handleRegisterMyself(s.classId, false)}
-                        className="w-full py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5"
-                      >
-                        <span>📝</span> Đăng ký tham gia lớp
-                      </button>
-                    )}
-
-                    {isManager && (
-                      <div className="flex items-center justify-end gap-2 w-full">
-                        <button
-                          onClick={() => {
-                            setEditingItem(s);
-                            setScheduleForm({
-                              classId: s.classId,
-                              roomId: s.roomId,
-                              dayOfWeek: s.dayOfWeek,
-                              startTime: s.startTime?.slice(0, 5) || '08:00',
-                              endTime: s.endTime?.slice(0, 5) || '09:30',
-                            });
-                            setIsScheduleModalOpen(true);
-                          }}
-                          className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition"
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSchedule(s.id)}
-                          className="px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs transition"
-                        >
-                          Xóa
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <ScheduleGrid
+            schedules={filteredSchedules}
+            isManager={isManager}
+            isMember={isMember}
+            myRegistrations={myRegistrations}
+            onRegisterMyself={handleRegisterMyself}
+            onEditSchedule={(s) => {
+              setEditingItem(s);
+              setScheduleForm({
+                classId: s.classId,
+                roomId: s.roomId,
+                dayOfWeek: s.dayOfWeek,
+                startTime: s.startTime?.slice(0, 5) || '08:00',
+                endTime: s.endTime?.slice(0, 5) || '09:30',
+              });
+              setIsScheduleModalOpen(true);
+            }}
+            onDeleteSchedule={handleDeleteSchedule}
+          />
         </div>
       )}
 
       {/* ===================== TAB 2: SPORT CLASSES (MANAGER) ===================== */}
       {activeTab === 'classes' && isManager && (
-        <div className="space-y-4">
-          <div className="overflow-x-auto bg-slate-900/60 rounded-2xl border border-slate-800">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-slate-800/60 text-slate-400 uppercase font-bold text-[10px] tracking-wider border-b border-slate-800">
-                <tr>
-                  <th className="p-3.5">ID</th>
-                  <th className="p-3.5">Tên lớp học</th>
-                  <th className="p-3.5">Bộ môn</th>
-                  <th className="p-3.5">HLV phụ trách</th>
-                  <th className="p-3.5">Cấp độ</th>
-                  <th className="p-3.5">Sĩ số tối đa</th>
-                  <th className="p-3.5">Hạng gói (Tier)</th>
-                  <th className="p-3.5 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {classes.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" className="p-8 text-center text-slate-500">
-                      Chưa có lớp học nào được tạo.
-                    </td>
-                  </tr>
-                ) : (
-                  classes.map((cls) => (
-                    <tr key={cls.id} className="hover:bg-slate-800/40 transition">
-                      <td className="p-3.5 font-mono text-slate-500">#{cls.id}</td>
-                      <td className="p-3.5 font-bold text-white">{cls.name}</td>
-                      <td className="p-3.5">
-                        <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                          {cls.categoryName}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-slate-200">👨‍🏫 {cls.coachName}</td>
-                      <td className="p-3.5">
-                        <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                          {cls.level}
-                        </span>
-                      </td>
-                      <td className="p-3.5 font-mono">{cls.maxCapacity} học viên</td>
-                      <td className="p-3.5 font-mono">Tier ≥ {cls.requiredTierLevel}</td>
-                      <td className="p-3.5 text-right">
-                        <button
-                          onClick={() => {
-                            setEditingItem(cls);
-                            setClassForm({
-                              categoryId: cls.categoryId,
-                              coachId: cls.coachId,
-                              name: cls.name,
-                              description: cls.description || '',
-                              level: cls.level,
-                              maxCapacity: cls.maxCapacity,
-                              requiredTierLevel: cls.requiredTierLevel,
-                            });
-                            setIsClassModalOpen(true);
-                          }}
-                          className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium"
-                        >
-                          Chỉnh sửa
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <SportClassTable
+          classes={classes}
+          onEditClass={(cls) => {
+            setEditingItem(cls);
+            setClassForm({
+              categoryId: cls.categoryId,
+              coachId: cls.coachId,
+              name: cls.name,
+              description: cls.description || '',
+              level: cls.level,
+              maxCapacity: cls.maxCapacity,
+              requiredTierLevel: cls.requiredTierLevel,
+            });
+            setIsClassModalOpen(true);
+          }}
+        />
       )}
 
       {/* ===================== TAB 3: CATEGORIES (MANAGER) ===================== */}
       {activeTab === 'categories' && isManager && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <p className="text-xs text-slate-400">Danh mục các bộ môn thể thao trong trung tâm</p>
-            <button
-              onClick={() => {
-                setEditingItem(null);
-                setCategoryForm({ name: '', description: '' });
-                setIsCategoryModalOpen(true);
-              }}
-              className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs transition"
-            >
-              ➕ Thêm Bộ môn mới
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {categories.map((cat) => (
-              <div key={cat.id} className="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-white text-sm">🏅 {cat.name}</h4>
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={() => {
-                        setEditingItem(cat);
-                        setCategoryForm({ name: cat.name, description: cat.description || '' });
-                        setIsCategoryModalOpen(true);
-                      }}
-                      className="text-xs text-slate-400 hover:text-white"
-                    >
-                      Sửa
-                    </button>
-                    <button
-                      onClick={() => handleDeleteCategory(cat.id, cat.name)}
-                      className="text-xs text-rose-400 hover:text-rose-300"
-                    >
-                      Xóa
-                    </button>
-                  </div>
-                </div>
-                <p className="text-xs text-slate-400">{cat.description || 'Chưa có mô tả'}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <CategoryManager
+          categories={categories}
+          onOpenCreate={() => {
+            setEditingItem(null);
+            setCategoryForm({ name: '', description: '' });
+            setIsCategoryModalOpen(true);
+          }}
+          onEditCategory={(cat) => {
+            setEditingItem(cat);
+            setCategoryForm({ name: cat.name, description: cat.description || '' });
+            setIsCategoryModalOpen(true);
+          }}
+          onDeleteCategory={handleDeleteCategory}
+        />
       )}
 
       {/* ===================== TAB 4: ROOMS (MANAGER) ===================== */}
       {activeTab === 'rooms' && isManager && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <p className="text-xs text-slate-400">Danh sách các phòng chức năng, sân tập của trung tâm</p>
-            <button
-              onClick={() => {
-                setEditingItem(null);
-                setRoomForm({
-                  roomName: '',
-                  floor: '1',
-                  capacity: 25,
-                  description: '',
-                  maintenanceStatus: 'GOOD',
-                });
-                setIsRoomModalOpen(true);
-              }}
-              className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs transition"
-            >
-              ➕ Thêm Phòng tập mới
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {rooms.map((room) => (
-              <div key={room.id} className="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-white text-sm">🏢 {room.roomName}</h4>
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={() => {
-                        setEditingItem(room);
-                        setRoomForm({
-                          roomName: room.roomName,
-                          floor: room.floor || '1',
-                          capacity: room.capacity || 20,
-                          description: room.description || '',
-                          maintenanceStatus: room.maintenanceStatus || 'GOOD',
-                        });
-                        setIsRoomModalOpen(true);
-                      }}
-                      className="text-xs text-slate-400 hover:text-white"
-                    >
-                      Sửa
-                    </button>
-                    <button
-                      onClick={() => handleDeleteRoom(room.id, room.roomName)}
-                      className="text-xs text-rose-400 hover:text-rose-300"
-                    >
-                      Xóa
-                    </button>
-                  </div>
-                </div>
-                <div className="text-xs text-slate-300 space-y-1">
-                  <div>Vị trí: Tầng {room.floor}</div>
-                  <div>Sức chứa: {room.capacity} người</div>
-                  <div>Tình trạng: <span className="text-emerald-400 font-semibold">{room.maintenanceStatus}</span></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <RoomManager
+          rooms={rooms}
+          onOpenCreate={() => {
+            setEditingItem(null);
+            setRoomForm({
+              roomName: '',
+              floor: '1',
+              capacity: 25,
+              description: '',
+              maintenanceStatus: 'GOOD',
+            });
+            setIsRoomModalOpen(true);
+          }}
+          onEditRoom={(room) => {
+            setEditingItem(room);
+            setRoomForm({
+              roomName: room.roomName,
+              floor: room.floor || '1',
+              capacity: room.capacity || 20,
+              description: room.description || '',
+              maintenanceStatus: room.maintenanceStatus || 'GOOD',
+            });
+            setIsRoomModalOpen(true);
+          }}
+          onDeleteRoom={handleDeleteRoom}
+        />
       )}
 
       {/* ===================== TAB 5: REGISTRATIONS (MEMBER & RECEPTIONIST) ===================== */}
       {activeTab === 'registrations' && (isMember || isReceptionist) && (
-        <div className="space-y-4">
-          {isReceptionist && (
-            <div className="flex items-center gap-3 bg-slate-900/60 p-3.5 rounded-xl border border-slate-800">
-              <span className="text-xs text-slate-300 font-semibold">Chọn Hội viên để xem:</span>
-              <select
-                value={receptionistSelectedMember}
-                onChange={(e) => handleLoadMemberRegistrations(e.target.value)}
-                className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white max-w-xs"
-              >
-                <option value="">-- Chọn Hội viên --</option>
-                {members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.fullName} ({m.email})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <div className="overflow-x-auto bg-slate-900/60 rounded-2xl border border-slate-800">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-slate-800/60 text-slate-400 uppercase font-bold text-[10px] tracking-wider border-b border-slate-800">
-                <tr>
-                  <th className="p-3.5">Mã ĐK</th>
-                  <th className="p-3.5">Lớp học</th>
-                  <th className="p-3.5">Học viên</th>
-                  <th className="p-3.5">Ngày đăng ký</th>
-                  <th className="p-3.5">Trạng thái</th>
-                  <th className="p-3.5">Phạt hủy muộn?</th>
-                  <th className="p-3.5 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {myRegistrations.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="p-8 text-center text-slate-500">
-                      Chưa có lượt đăng ký lớp học nào.
-                    </td>
-                  </tr>
-                ) : (
-                  myRegistrations.map((reg) => (
-                    <tr key={reg.id} className="hover:bg-slate-800/40 transition">
-                      <td className="p-3.5 font-mono text-slate-500">#{reg.id}</td>
-                      <td className="p-3.5 font-bold text-white">{reg.className}</td>
-                      <td className="p-3.5">{reg.memberName}</td>
-                      <td className="p-3.5 text-slate-400">
-                        {reg.registeredAt ? new Date(reg.registeredAt).toLocaleDateString('vi-VN') : '—'}
-                      </td>
-                      <td className="p-3.5">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[11px] font-bold ${reg.status === 'REGISTERED'
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : reg.status === 'WAITLIST'
-                              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                              : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                            }`}
-                        >
-                          {reg.status}
-                        </span>
-                      </td>
-                      <td className="p-3.5">
-                        {reg.isPenalized ? (
-                          <span className="text-rose-400 font-semibold">⚠️ Bị phạt</span>
-                        ) : (
-                          <span className="text-slate-500">Không</span>
-                        )}
-                      </td>
-                      <td className="p-3.5 text-right">
-                        {reg.status !== 'CANCELED' && reg.status !== 'LATE_CANCELED' && (
-                          <button
-                            onClick={() => {
-                              if (isMember) {
-                                handleCancelMyRegistration(reg.id, reg.className);
-                              } else if (isReceptionist) {
-                                handleReceptionistCancelReg(reg.id);
-                              }
-                            }}
-                            className="px-2.5 py-1 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-medium"
-                          >
-                            Hủy lớp
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <RegistrationHistoryTable
+          registrations={myRegistrations}
+          isReceptionist={isReceptionist}
+          isMember={isMember}
+          members={members}
+          selectedMemberId={receptionistSelectedMember}
+          onMemberSelect={handleLoadMemberRegistrations}
+          onCancelRegistration={(reg) => {
+            if (isMember) {
+              handleCancelMyRegistration(reg.id, reg.className);
+            } else if (isReceptionist) {
+              handleReceptionistCancelReg(reg.id);
+            }
+          }}
+        />
       )}
 
-      {/* ===================== MODAL: CREATE/EDIT SPORT CLASS ===================== */}
-      {isClassModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base">
-                {editingItem ? '✏️ Cập nhật Lớp học' : '➕ Tạo Lớp học Thể thao mới'}
-              </h3>
-              <button onClick={() => setIsClassModalOpen(false)} className="text-slate-400 hover:text-white">
-                ✕
-              </button>
-            </div>
+      {/* Modals */}
+      <ClassFormModal
+        isOpen={isClassModalOpen}
+        isEditing={Boolean(editingItem)}
+        form={classForm}
+        categories={categories}
+        coaches={coaches}
+        onChange={setClassForm}
+        onClose={() => setIsClassModalOpen(false)}
+        onSubmit={handleSaveClass}
+      />
 
-            <form onSubmit={handleSaveClass} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Tên lớp học *</label>
-                <input
-                  type="text"
-                  required
-                  value={classForm.name}
-                  onChange={(e) => setClassForm({ ...classForm, name: e.target.value })}
-                  placeholder="Ví dụ: Yoga Bình Minh Khóa 01"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                />
-              </div>
+      <ScheduleFormModal
+        isOpen={isScheduleModalOpen}
+        isEditing={Boolean(editingItem)}
+        form={scheduleForm}
+        classes={classes}
+        rooms={rooms}
+        dayNames={dayNames}
+        onChange={setScheduleForm}
+        onClose={() => setIsScheduleModalOpen(false)}
+        onSubmit={handleSaveSchedule}
+      />
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Bộ môn *</label>
-                  <select
-                    required
-                    value={classForm.categoryId}
-                    onChange={(e) => setClassForm({ ...classForm, categoryId: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                  >
-                    <option value="">-- Chọn Bộ môn --</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+      <CategoryFormModal
+        isOpen={isCategoryModalOpen}
+        isEditing={Boolean(editingItem)}
+        form={categoryForm}
+        onChange={setCategoryForm}
+        onClose={() => setIsCategoryModalOpen(false)}
+        onSubmit={handleSaveCategory}
+      />
 
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Huấn luyện viên phụ trách *</label>
-                  <select
-                    required
-                    value={classForm.coachId}
-                    onChange={(e) => setClassForm({ ...classForm, coachId: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                  >
-                    <option value="">-- Chọn HLV --</option>
-                    {coaches.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.fullName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+      <RoomFormModal
+        isOpen={isRoomModalOpen}
+        isEditing={Boolean(editingItem)}
+        form={roomForm}
+        onChange={setRoomForm}
+        onClose={() => setIsRoomModalOpen(false)}
+        onSubmit={handleSaveRoom}
+      />
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Cấp độ</label>
-                  <select
-                    value={classForm.level}
-                    onChange={(e) => setClassForm({ ...classForm, level: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                  >
-                    <option value="BEGINNER">Cơ bản (Beginner)</option>
-                    <option value="INTERMEDIATE">Trung cấp</option>
-                    <option value="ADVANCED">Nâng cao</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Sĩ số tối đa *</label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={classForm.maxCapacity}
-                    onChange={(e) => setClassForm({ ...classForm, maxCapacity: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Hạng gói (Tier) *</label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={classForm.requiredTierLevel}
-                    onChange={(e) => setClassForm({ ...classForm, requiredTierLevel: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Mô tả chi tiết lớp</label>
-                <textarea
-                  rows="3"
-                  value={classForm.description}
-                  onChange={(e) => setClassForm({ ...classForm, description: e.target.value })}
-                  placeholder="Mô tả nội dung chương trình giảng dạy..."
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                ></textarea>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsClassModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold"
-                >
-                  Lưu lớp học
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ===================== MODAL: CREATE/EDIT CLASS SCHEDULE ===================== */}
-      {isScheduleModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base">
-                {editingItem ? '✏️ Cập nhật Ca học' : '➕ Xếp Lịch / Ca học mới'}
-              </h3>
-              <button onClick={() => setIsScheduleModalOpen(false)} className="text-slate-400 hover:text-white">
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveSchedule} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Chọn Lớp học *</label>
-                <select
-                  required
-                  value={scheduleForm.classId}
-                  onChange={(e) => setScheduleForm({ ...scheduleForm, classId: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                >
-                  <option value="">-- Chọn Lớp --</option>
-                  {classes.map((cls) => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.name} (HLV: {cls.coachName})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Chọn Phòng tập *</label>
-                <select
-                  required
-                  value={scheduleForm.roomId}
-                  onChange={(e) => setScheduleForm({ ...scheduleForm, roomId: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                >
-                  <option value="">-- Chọn Phòng --</option>
-                  {rooms.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.roomName} (Tầng {r.floor})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Thứ trong tuần *</label>
-                <select
-                  value={scheduleForm.dayOfWeek}
-                  onChange={(e) => setScheduleForm({ ...scheduleForm, dayOfWeek: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                >
-                  {Object.entries(dayNames).map(([val, name]) => (
-                    <option key={val} value={val}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Giờ bắt đầu *</label>
-                  <input
-                    type="time"
-                    required
-                    value={scheduleForm.startTime}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, startTime: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Giờ kết thúc *</label>
-                  <input
-                    type="time"
-                    required
-                    value={scheduleForm.endTime}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, endTime: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsScheduleModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold"
-                >
-                  Lưu ca học
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ===================== MODAL: RECEPTIONIST REGISTER MEMBER ===================== */}
-      {isReceptionistRegModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base">Đăng ký lớp học cho Hội viên</h3>
-              <button onClick={() => setIsReceptionistRegModalOpen(false)} className="text-slate-400 hover:text-white">
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleReceptionistRegister} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Chọn Hội viên *</label>
-                <select
-                  required
-                  value={receptionistRegForm.memberId}
-                  onChange={(e) => setReceptionistRegForm({ ...receptionistRegForm, memberId: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                >
-                  <option value="">-- Chọn Hội viên --</option>
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.fullName} ({m.phone || m.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Chọn Lớp học *</label>
-                <select
-                  required
-                  value={receptionistRegForm.classId}
-                  onChange={(e) => setReceptionistRegForm({ ...receptionistRegForm, classId: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                >
-                  <option value="">-- Chọn Lớp --</option>
-                  {classes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} (Bộ môn: {c.categoryName})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="waitlistCheck"
-                  checked={receptionistRegForm.joinWaitlist}
-                  onChange={(e) =>
-                    setReceptionistRegForm({ ...receptionistRegForm, joinWaitlist: e.target.checked })
-                  }
-                  className="rounded bg-slate-900 border-slate-700 text-emerald-500"
-                />
-                <label htmlFor="waitlistCheck" className="text-slate-300 cursor-pointer">
-                  Chấp nhận vào Danh sách chờ (Waitlist) nếu lớp đầy
-                </label>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsReceptionistRegModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold"
-                >
-                  Xác nhận đăng ký
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ===================== MODAL: CREATE/EDIT CATEGORY ===================== */}
-      {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base">
-                {editingItem ? '✏️ Cập nhật Bộ môn' : '➕ Thêm Bộ môn mới'}
-              </h3>
-              <button onClick={() => setIsCategoryModalOpen(false)} className="text-slate-400 hover:text-white">
-                ✕
-              </button>
-            </div>
-            <form onSubmit={handleSaveCategory} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Tên bộ môn *</label>
-                <input
-                  type="text"
-                  required
-                  value={categoryForm.name}
-                  onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
-                  placeholder="Ví dụ: Yoga, Boxing, Futsal"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Mô tả</label>
-                <textarea
-                  rows="2"
-                  value={categoryForm.description}
-                  onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                ></textarea>
-              </div>
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsCategoryModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold"
-                >
-                  Lưu
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ===================== MODAL: CREATE/EDIT ROOM ===================== */}
-      {isRoomModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base">
-                {editingItem ? '✏️ Cập nhật Phòng tập' : '➕ Thêm Phòng tập mới'}
-              </h3>
-              <button onClick={() => setIsRoomModalOpen(false)} className="text-slate-400 hover:text-white">
-                ✕
-              </button>
-            </div>
-            <form onSubmit={handleSaveRoom} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Tên phòng *</label>
-                <input
-                  type="text"
-                  required
-                  value={roomForm.roomName}
-                  onChange={(e) => setRoomForm({ ...roomForm, roomName: e.target.value })}
-                  placeholder="Ví dụ: Phòng Yoga A1"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Tầng</label>
-                  <input
-                    type="text"
-                    value={roomForm.floor}
-                    onChange={(e) => setRoomForm({ ...roomForm, floor: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Sức chứa</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={roomForm.capacity}
-                    onChange={(e) => setRoomForm({ ...roomForm, capacity: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsRoomModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold"
-                >
-                  Lưu
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ReceptionistRegisterModal
+        isOpen={isReceptionistRegModalOpen}
+        form={receptionistRegForm}
+        members={members}
+        classes={classes}
+        onChange={setReceptionistRegForm}
+        onClose={() => setIsReceptionistRegModalOpen(false)}
+        onSubmit={handleReceptionistRegister}
+      />
 
       {/* Countdown Confirm Modal */}
       <CountdownConfirmModal
         isOpen={confirmModal.isOpen}
         onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
-        onConfirm={confirmModal.action}
+        onConfirm={() => {
+          setConfirmModal({ ...confirmModal, isOpen: false });
+          if (confirmModal.action) confirmModal.action();
+        }}
         title={confirmModal.title}
         message={confirmModal.message}
         confirmText={confirmModal.confirmText}

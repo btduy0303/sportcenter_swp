@@ -18,7 +18,12 @@ export default function SubscriptionsPage() {
   const [packages, setPackages] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [message, setMessage] = useState({ type: '', text: '' });
+  const setMessage = ({ type, text }) => {
+    if (!text) return;
+    if (type === 'error') toast.error(text);
+    else if (type === 'warning') toast.warning(text);
+    else toast.success(text);
+  };
 
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isPayOpen, setIsPayOpen] = useState(false);
@@ -189,19 +194,6 @@ export default function SubscriptionsPage() {
           </button>
         )}
       </div>
-
-      {message.text && (
-        <div
-          className={`p-3 rounded-xl text-xs flex items-center justify-between ${
-            message.type === 'success'
-              ? 'bg-emerald-950/50 border border-emerald-800 text-emerald-300'
-              : 'bg-rose-950/50 border border-rose-800 text-rose-300'
-          }`}
-        >
-          <span>{message.text}</span>
-          <button type="button" onClick={() => setMessage({ type: '', text: '' })}>✕</button>
-        </div>
-      )}
 
       <SubscriptionFilterBar
         searchTerm={searchTerm}

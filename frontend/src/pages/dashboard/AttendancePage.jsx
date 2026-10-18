@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import CheckInPanel from '../../components/dashboard/attendance/CheckInPanel';
 import AttendanceHistoryTable from '../../components/dashboard/attendance/AttendanceHistoryTable';
 
@@ -7,7 +8,13 @@ export default function AttendancePage() {
   const [attendances, setAttendances] = useState([]);
   const [members, setMembers] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
-  const [message, setMessage] = useState({ type: '', text: '' });
+  const toast = useToast();
+  const setMessage = ({ type, text }) => {
+    if (!text) return;
+    if (type === 'error') toast.error(text);
+    else if (type === 'warning') toast.warning(text);
+    else toast.success(text);
+  };
 
   const [selectedUserId, setSelectedUserId] = useState('');
   const [checkInNotes, setCheckInNotes] = useState('Cổng FaceID số 1 - Khu Thể Thao');
@@ -130,19 +137,6 @@ export default function AttendancePage() {
           <div className="text-lg font-black text-white">{activeInFacility.length} hội viên</div>
         </div>
       </div>
-
-      {message.text && (
-        <div
-          className={`p-3 rounded-xl text-xs flex items-center justify-between ${
-            message.type === 'success'
-              ? 'bg-emerald-950/50 border border-emerald-800 text-emerald-300'
-              : 'bg-rose-950/50 border border-rose-800 text-rose-300'
-          }`}
-        >
-          <span>{message.text}</span>
-          <button type="button" onClick={() => setMessage({ type: '', text: '' })}>✕</button>
-        </div>
-      )}
 
       <CheckInPanel
         members={members}

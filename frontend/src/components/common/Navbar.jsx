@@ -112,27 +112,16 @@ export default function Navbar({ onOpenDemo }) {
               </div>
 
               <a href="#features" className="px-3 py-2 rounded-lg hover:text-white hover:bg-slate-800/50 transition-colors">
-                Bảng giá
-              </a>
-
-              <a href="#partners" className="px-3 py-2 rounded-lg hover:text-white hover:bg-slate-800/50 transition-colors">
-                Khách hàng
+                Chức năng
               </a>
 
               <a href="#ecosystem" className="px-3 py-2 rounded-lg hover:text-white hover:bg-slate-800/50 transition-colors">
-                Hệ sinh thái
+                Bộ môn
               </a>
             </nav>
           </div>
 
           <div className="hidden lg:flex items-center gap-3">
-            <a
-              href="tel:19006868"
-              className="text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors px-2"
-            >
-              Hotline: 1900 6868
-            </a>
-
             {isAuthenticated ? (
               <div className="flex items-center gap-2.5">
                 <a
@@ -163,21 +152,21 @@ export default function Navbar({ onOpenDemo }) {
                 </button>
               </div>
             ) : (
-              <a
-                href="/login"
-                className="text-xs font-bold px-4 py-2.5 rounded-xl text-slate-200 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 transition-all text-center"
-              >
-                Đăng nhập
-              </a>
+              <div className="flex items-center gap-2">
+                <a
+                  href="/login"
+                  className="text-xs font-bold px-4 py-2 rounded-xl text-slate-200 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 transition-all text-center"
+                >
+                  Đăng nhập
+                </a>
+                <a
+                  href="/register"
+                  className="text-xs font-bold px-4 py-2 rounded-xl text-white bg-emerald-600 hover:bg-emerald-500 shadow-md shadow-emerald-600/20 transition-all text-center"
+                >
+                  Đăng ký
+                </a>
+              </div>
             )}
-
-            <button
-              type="button"
-              onClick={onOpenDemo}
-              className="px-4 py-2.5 text-xs font-bold text-white bg-emerald-500 rounded-xl shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 active:scale-95 transition-all cursor-pointer"
-            >
-              Đặt lịch demo
-            </button>
           </div>
 
           <div className="flex lg:hidden items-center gap-2">
@@ -251,25 +240,21 @@ export default function Navbar({ onOpenDemo }) {
               </button>
             </>
           ) : (
-            <a
-              href="/login"
-              className="block px-3 py-2 text-sm font-bold text-white bg-slate-800 rounded-lg"
-            >
-              Đăng nhập hệ thống
-            </a>
+            <div className="flex flex-col gap-2">
+              <a
+                href="/login"
+                className="block px-3 py-2 text-sm font-bold text-white bg-slate-800 rounded-lg text-center"
+              >
+                Đăng nhập hệ thống
+              </a>
+              <a
+                href="/register"
+                className="block px-3 py-2 text-sm font-bold text-white bg-emerald-600 rounded-lg text-center"
+              >
+                Đăng ký tài khoản
+              </a>
+            </div>
           )}
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenDemo();
-              }}
-              className="w-full py-2.5 text-center font-bold text-white bg-emerald-500 rounded-xl hover:bg-emerald-400 transition-colors"
-            >
-              Đặt lịch demo miễn phí
-            </button>
-          </div>
         </div>
       )}
     </header>

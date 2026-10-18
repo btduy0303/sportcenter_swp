@@ -2,17 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import PackageCard from '../../components/dashboard/packages/PackageCard';
 import PackageFormModal from '../../components/dashboard/packages/PackageFormModal';
+import CountdownConfirmModal from '../../components/common/CountdownConfirmModal';
 
 export default function PackagesPage() {
   const { isManager, isMember, isReceptionist } = useAuth();
   const navigate = useNavigate();
 
   const [packages, setPackages] = useState([]);
-  const [message, setMessage] = useState({ type: '', text: '' });
+  const toast = useToast();
+  const setMessage = ({ type, text }) => {
+    if (!text) return;
+    if (type === 'error') toast.error(text);
+    else toast.success(text);
+  };
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
+
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Xác nhận',
+    type: 'danger',
+    onConfirm: null,
+  });
 
   const [formData, setFormData] = useState({
     code: '',
@@ -70,22 +86,35 @@ export default function PackagesPage() {
     setIsModalOpen(true);
   };
 
-  const handleDeletePackage = async (pkg) => {
+  const handleDeletePackage = (pkg) => {
     const nextStatus = !pkg.isActive;
-    if (!window.confirm(`Bạn có chắc muốn ${nextStatus ? 'kích hoạt' : 'ẩn'} gói "${pkg.name}"?`)) return;
-    try {
-      await api.updatePackageStatus(pkg.id, { isActive: nextStatus });
-      setMessage({ type: 'success', text: `Đã cập nhật trạng thái gói ${pkg.name}` });
-      loadPackages();
-    } catch (err) {
-      setMessage({ type: 'error', text: err.message || 'Lỗi khi cập nhật trạng thái gói' });
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: nextStatus ? 'Xác nhận kích hoạt gói tập' : 'Xác nhận ẩn gói tập',
+      message: `Bạn có chắc chắn muốn ${nextStatus ? 'kích hoạt' : 'ẩn'} gói tập "${pkg.name}"? ${
+        nextStatus ? 'Hội viên sẽ có thể nhìn thấy và đăng ký gói này.' : 'Gói này sẽ bị ẩn khỏi danh sách đăng ký của hội viên.'
+      }`,
+      confirmText: nextStatus ? 'Kích hoạt ngay' : 'Ẩn gói tập',
+      type: nextStatus ? 'primary' : 'danger',
+      onConfirm: async () => {
+        try {
+          await api.updatePackageStatus(pkg.id, { isActive: nextStatus });
+          setMessage({ type: 'success', text: `Đã ${nextStatus ? 'kích hoạt' : 'ẩn'} gói tập "${pkg.name}" thành công!` });
+          loadPackages();
+        } catch (err) {
+          setMessage({ type: 'error', text: err.message || 'Lỗi khi cập nhật trạng thái gói' });
+        } finally {
+          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+        }
+      },
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (editingPackage) {
+        // Cập nhật thông tin gói (không gửi isActive vì backend bắt buộc đổi status qua API riêng)
         await api.updatePackage(editingPackage.id, {
           name: formData.name,
           description: formData.description,
@@ -93,8 +122,15 @@ export default function PackagesPage() {
           price: Number(formData.price),
           tierLevel: Number(formData.tierLevel || 1),
           maxClassesPerWeek: Number(formData.maxClassesPerWeek),
-          isActive: formData.isActive,
         });
+
+        // Nếu trạng thái isActive thay đổi so với ban đầu thì gọi api updatePackageStatus riêng
+        if (formData.isActive !== editingPackage.isActive) {
+          await api.updatePackageStatus(editingPackage.id, {
+            isActive: Boolean(formData.isActive),
+          });
+        }
+
         setMessage({ type: 'success', text: 'Cập nhật gói tập thành công!' });
       } else {
         await api.createPackage({
@@ -134,19 +170,6 @@ export default function PackagesPage() {
         )}
       </div>
 
-      {message.text && (
-        <div
-          className={`p-3 rounded-xl text-xs flex items-center justify-between ${
-            message.type === 'success'
-              ? 'bg-emerald-950/50 border border-emerald-800 text-emerald-300'
-              : 'bg-rose-950/50 border border-rose-800 text-rose-300'
-          }`}
-        >
-          <span>{message.text}</span>
-          <button type="button" onClick={() => setMessage({ type: '', text: '' })}>✕</button>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {packages.map((pkg) => (
           <PackageCard
@@ -169,6 +192,16 @@ export default function PackagesPage() {
         formData={formData}
         onChange={setFormData}
         onSubmit={handleSubmit}
+      />
+
+      <CountdownConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        type={confirmModal.type}
+        onConfirm={confirmModal.onConfirm}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
       />
     </div>
   );

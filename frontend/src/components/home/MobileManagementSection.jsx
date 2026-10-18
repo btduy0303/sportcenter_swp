@@ -60,8 +60,8 @@ export default function MobileManagementSection({ onOpenDemo }) {
               </p>
               
               <div className="mt-4 pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-emerald-400 font-semibold">
-                <span>✓ Tất cả tích hợp trong một hệ thống duy nhất</span>
-                <span>✓ Dễ dùng trên điện thoại & máy tính</span>
+                <span>Tất cả tích hợp trong một hệ thống duy nhất</span>
+                <span>Dễ dùng trên điện thoại & máy tính</span>
               </div>
             </div>
 

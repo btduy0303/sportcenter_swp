@@ -11,7 +11,7 @@ export default function InvoiceModal({ invoice, onClose }) {
           onClick={onClose}
           className="absolute top-5 right-5 text-slate-400 hover:text-white text-lg p-1"
         >
-          ✕
+          Đóng
         </button>
 
         <div className="text-center pb-4 border-b border-slate-800">

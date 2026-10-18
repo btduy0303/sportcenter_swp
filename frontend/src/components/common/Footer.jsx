@@ -21,24 +21,8 @@ export default function Footer({ onOpenDemo }) {
             </div>
 
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-sm">
-              Phần mềm Quản lý Trung tâm Thể thao, Sân bãi, Gym, Bể bơi & Tổ hợp thể dục thể thao hàng đầu Việt Nam. Tự động hóa đặt sân, kiểm soát cổng và chăm sóc khách hàng.
+              Hệ thống quản lý trung tâm thể thao hỗ trợ quản lý thẻ hội viên, phân ca lớp học, điểm danh check-in và thống kê doanh thu.
             </p>
-
-            <div className="flex items-center gap-2 text-xs text-amber-300 font-semibold bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg w-fit">
-              <Award className="w-4 h-4" />
-              <span>Giải Thưởng Chuyển Đổi Số Thể Thao 2024</span>
-            </div>
-
-            <div className="space-y-2 pt-2 text-xs">
-              <div className="flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Tổng đài hỗ trợ: <strong className="text-white">1900 6868</strong> (24/7)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Email liên hệ: support@sportcenter.vn</span>
-              </div>
-            </div>
           </div>
 
           {/* Column 1: Sản phẩm */}
@@ -66,21 +50,21 @@ export default function Footer({ onOpenDemo }) {
             </ul>
           </div>
 
-          {/* Column 3: Địa chỉ văn phòng */}
+          {/* Column 3: Thông tin đồ án */}
           <div className="space-y-3">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider">Văn Phòng Toàn Quốc</h4>
-            <div className="space-y-2.5 text-xs">
+            <h4 className="text-sm font-bold text-white uppercase tracking-wider">Thông Tin Hệ Thống</h4>
+            <div className="space-y-2.5 text-xs text-slate-400">
               <div>
-                <strong className="text-slate-300">Trụ sở Hà Nội:</strong>
-                <p className="text-slate-400">Tầng 8, Tòa nhà Detech Tower, Cầu Giấy</p>
+                <strong className="text-slate-300">Đồ án chuyên ngành:</strong>
+                <p>Hệ thống Quản lý Trung tâm Thể thao</p>
               </div>
               <div>
-                <strong className="text-slate-300">TP. Hồ Chí Minh:</strong>
-                <p className="text-slate-400">Tầng 5, Sport Innovation Center, Quận 1</p>
+                <strong className="text-slate-300">Công nghệ:</strong>
+                <p>Spring Boot & React</p>
               </div>
               <div>
-                <strong className="text-slate-300">Đà Nẵng:</strong>
-                <p className="text-slate-400">Tầng 4, Danang Software Park, Hải Châu</p>
+                <strong className="text-slate-300">Phiên bản:</strong>
+                <p>v1.0 - Năm học 2024 - 2025</p>
               </div>
             </div>
           </div>
@@ -89,16 +73,11 @@ export default function Footer({ onOpenDemo }) {
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-          <p>© 2026 SportCenter Việt Nam. Hệ thống Quản trị Trung tâm Thể thao Toàn diện.</p>
+          <p>© 2026 SportCenter. Hệ thống Quản trị Trung tâm Thể thao.</p>
           <div className="flex items-center gap-6">
-            <a href="#" className="hover:text-slate-300 transition-colors">Điều khoản dịch vụ</a>
-            <a href="#" className="hover:text-slate-300 transition-colors">Chính sách bảo mật</a>
-            <button
-              onClick={onOpenDemo}
-              className="text-emerald-400 hover:text-emerald-300 font-bold cursor-pointer"
-            >
-              Đăng ký Demo SportCenter
-            </button>
+            <a href="/login" className="text-emerald-400 hover:text-emerald-300 font-bold">
+              Đăng nhập hệ thống
+            </a>
           </div>
         </div>
 

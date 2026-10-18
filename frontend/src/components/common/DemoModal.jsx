@@ -154,7 +154,7 @@ export default function DemoModal({ isOpen, onClose }) {
               </button>
 
               <div className="text-center text-[11px] text-slate-400">
-                🔒 Cam kết bảo mật thông tin trung tâm theo tiêu chuẩn ISO/IEC 27001
+                Cam kết bảo mật thông tin trung tâm theo tiêu chuẩn ISO/IEC 27001
               </div>
             </form>
           </div>

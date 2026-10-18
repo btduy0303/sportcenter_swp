@@ -8,7 +8,7 @@ export default function RecentActivities({ attendances, subscriptions }) {
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <h3 className="text-sm font-bold text-white">Lượt Check-in Gần Nhất</h3>
           <Link to="/app/attendance" className="text-xs text-emerald-400 hover:underline">
-            Xem tất cả →
+            Xem tất cả
           </Link>
         </div>
 
@@ -44,7 +44,7 @@ export default function RecentActivities({ attendances, subscriptions }) {
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <h3 className="text-sm font-bold text-white">Hợp Đồng Gói Mới</h3>
           <Link to="/app/subscriptions" className="text-xs text-emerald-400 hover:underline">
-            Quản lý gói →
+            Quản lý gói
           </Link>
         </div>
 

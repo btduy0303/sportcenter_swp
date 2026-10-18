@@ -11,7 +11,7 @@ export default function UserCreateModal({ isOpen, onClose, isManager, formData, 
           onClick={onClose}
           className="absolute top-5 right-5 text-slate-400 hover:text-white text-lg p-1"
         >
-          ✕
+          Đóng
         </button>
 
         <h3 className="text-xl font-bold text-white mb-1">

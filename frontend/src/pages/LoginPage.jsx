@@ -121,7 +121,7 @@ export default function LoginPage() {
 
         <div className="mt-6 text-center text-xs">
           <Link to="/" className="text-slate-500 hover:text-slate-300">
-            ← Quay lại Trang chủ
+            Quay lại Trang chủ
           </Link>
         </div>
       </div>

@@ -5,7 +5,7 @@ const ToastContext = createContext(null);
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
 
-  const addToast = useCallback((message, type = 'info', duration = 4000) => {
+  const addToast = useCallback((message, type = 'info', duration = 3000) => {
     const id = Date.now() + Math.random().toString(36).substring(2, 5);
     setToasts((prev) => [...prev, { id, message, type }]);
 
@@ -46,20 +46,14 @@ export const ToastProvider = ({ children }) => {
                 : 'bg-slate-900/95 text-slate-200 border-slate-700 shadow-slate-950/50'
             }`}
           >
-            <div className="flex items-start gap-2.5 text-xs font-semibold leading-relaxed">
-              <span className="text-sm">
-                {t.type === 'error' && '❌'}
-                {t.type === 'success' && '✅'}
-                {t.type === 'warning' && '⚠️'}
-                {t.type === 'info' && 'ℹ️'}
-              </span>
+            <div className="text-xs font-semibold leading-relaxed">
               <span>{t.message}</span>
             </div>
             <button
               onClick={() => removeToast(t.id)}
-              className="text-slate-400 hover:text-white text-xs opacity-70 hover:opacity-100 p-0.5 shrink-0"
+              className="text-slate-400 hover:text-white text-[11px] font-medium opacity-70 hover:opacity-100 p-0.5 shrink-0"
             >
-              ✕
+              Đóng
             </button>
           </div>
         ))}

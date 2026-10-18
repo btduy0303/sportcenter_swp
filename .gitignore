@@ -66,10 +66,7 @@ Desktop.ini
 $RECYCLE.BIN/
 
 # ========================
-# Misc
+# Ignore Backend submodule/folder
 # ========================
-*.local
-.nb-gradle/
-nbproject/private/
-nbbuild/
-nbdist/
+be/
+SportCenterManagementSystem_V2/

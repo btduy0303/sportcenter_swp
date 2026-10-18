@@ -31,7 +31,7 @@ export default function ActiveMembershipCard({ activeSubs }) {
               </div>
               <div className="text-xs text-slate-300 flex items-center justify-between">
                 <span>Hạn sử dụng:</span>
-                <strong className="text-emerald-400">{sub.startDate || '—'} → {sub.endDate || '—'}</strong>
+                <strong className="text-emerald-400">{sub.startDate || '—'} - {sub.endDate || '—'}</strong>
               </div>
               <div className="text-xs text-slate-400">
                 Lớp tối đa: <strong className="text-white">{sub.maxClassesPerWeek ? `${sub.maxClassesPerWeek} buổi/tuần` : 'Tiêu chuẩn'}</strong>
