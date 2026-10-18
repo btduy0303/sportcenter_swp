@@ -28,31 +28,33 @@ export default function PaymentTable({ payments, onSelectInvoice }) {
             {payments.map((p) => (
               <tr key={p.id} className="hover:bg-slate-800/40 transition-colors">
                 <td className="py-3.5 px-4">
-                  <div className="font-mono font-bold text-emerald-400">{p.invoiceNumber}</div>
-                  <div className="text-[10px] text-slate-500 font-mono">{p.transactionCode}</div>
+                  <div className="font-mono font-bold text-emerald-400">{p.invoiceNumber || `#PAY-${p.id}`}</div>
+                  <div className="text-[10px] text-slate-500 font-mono">{p.transactionCode || '—'}</div>
                 </td>
 
-                <td className="py-3.5 px-4 font-bold text-white">{p.payerName}</td>
+                <td className="py-3.5 px-4 font-bold text-white">{p.payerName || 'Hội viên'}</td>
 
                 <td className="py-3.5 px-4 font-black text-white text-sm">
-                  {(p.amount || 0).toLocaleString('vi-VN')} ₫
+                  {(p.amount ? Number(p.amount) : 0).toLocaleString('vi-VN')} ₫
                 </td>
 
                 <td className="py-3.5 px-4">
                   <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                    {p.paymentMethod}
+                    {p.paymentMethod || 'CASH'}
                   </span>
                 </td>
 
                 <td className="py-3.5 px-4">
                   <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    {p.status}
+                    {p.paymentStatus || p.status || 'SUCCESS'}
                   </span>
                 </td>
 
                 <td className="py-3.5 px-4 text-slate-400 text-[11px]">
-                  <div>{new Date(p.paidAt).toLocaleString('vi-VN')}</div>
-                  <div className="text-slate-500 text-[10px]">Thu ngân: {p.receivedBy}</div>
+                  <div>{p.paidAt ? new Date(p.paidAt).toLocaleString('vi-VN') : '—'}</div>
+                  <div className="text-slate-500 text-[10px]">
+                    {p.paymentMethod === 'ONLINE' ? 'Trực tuyến (PayOS)' : (p.receivedBy || 'Thu ngân')}
+                  </div>
                 </td>
 
                 <td className="py-3.5 px-4 text-right">

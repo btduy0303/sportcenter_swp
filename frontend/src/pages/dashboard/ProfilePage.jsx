@@ -28,13 +28,19 @@ export default function ProfilePage() {
 
   const loadProfile = async () => {
     try {
-      const [userProfile, subs] = await Promise.all([
-        api.getMyProfile(),
-        api.getMyActiveSubscriptions(),
-      ]);
-
+      const userProfile = await api.getMyProfile();
       setProfile(userProfile);
-      setActiveSubs(subs);
+
+      if (userProfile.role === 'MEMBER') {
+        try {
+          const sub = await api.getMyActiveSubscription();
+          setActiveSubs(sub ? [sub] : []);
+        } catch {
+          setActiveSubs([]);
+        }
+      } else {
+        setActiveSubs([]);
+      }
 
       setFormData({
         fullName: userProfile.fullName || '',
@@ -42,14 +48,15 @@ export default function ProfilePage() {
         gender: userProfile.gender || 'MALE',
         dateOfBirth: userProfile.dateOfBirth || '',
         avatarUrl: userProfile.avatarUrl || '',
-        heightCm: userProfile.heightCm || '',
-        weightKg: userProfile.weightKg || '',
-        fitnessGoal: userProfile.fitnessGoal || '',
-        yearsExperience: userProfile.yearsExperience || '',
-        certifications: userProfile.certifications || '',
+        heightCm: userProfile.memberProfile?.heightCm || '',
+        weightKg: userProfile.memberProfile?.weightKg || '',
+        fitnessGoal: userProfile.memberProfile?.fitnessGoal || '',
+        yearsExperience: userProfile.coachProfile?.yearsExperience || '',
+        certifications: userProfile.coachProfile?.certifications || '',
       });
     } catch (e) {
       console.error(e);
+      setMessage({ type: 'error', text: e.message || 'Không thể tải hồ sơ cá nhân' });
     }
   };
 
@@ -57,11 +64,35 @@ export default function ProfilePage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.updateMyProfile(formData);
+      // 1. Update basic profile info
+      await api.updateMyProfile({
+        fullName: formData.fullName,
+        phone: formData.phone,
+        gender: formData.gender,
+        dateOfBirth: formData.dateOfBirth,
+      });
+
+      // 2. If member, update member profile
+      if (profile?.role === 'MEMBER' && (formData.heightCm || formData.weightKg || formData.fitnessGoal)) {
+        await api.updateMemberProfile({
+          heightCm: formData.heightCm ? Number(formData.heightCm) : null,
+          weightKg: formData.weightKg ? Number(formData.weightKg) : null,
+          fitnessGoal: formData.fitnessGoal,
+        });
+      }
+
+      // 3. If coach, update coach profile
+      if (profile?.role === 'COACH' && (formData.yearsExperience || formData.certifications)) {
+        await api.updateCoachProfile({
+          yearsExperience: formData.yearsExperience ? Number(formData.yearsExperience) : 0,
+          certifications: formData.certifications,
+        });
+      }
+
       setMessage({ type: 'success', text: 'Cập nhật hồ sơ cá nhân thành công!' });
       loadProfile();
     } catch (err) {
-      setMessage({ type: 'error', text: err.message || 'Lỗi khi cập nhật' });
+      setMessage({ type: 'error', text: err.message || 'Lỗi khi cập nhật hồ sơ' });
     } finally {
       setSaving(false);
     }

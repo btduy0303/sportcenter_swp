@@ -6,7 +6,7 @@ import KpiCard from '../../components/dashboard/overview/KpiCard';
 import RecentActivities from '../../components/dashboard/overview/RecentActivities';
 
 export default function OverviewPage() {
-  const { user, isReceptionist } = useAuth();
+  const { user, isManager, isReceptionist } = useAuth();
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeSubs: 0,
@@ -22,26 +22,37 @@ export default function OverviewPage() {
 
   const loadData = async () => {
     try {
-      const [users, subs, atts] = await Promise.all([
-        api.searchUsers(),
-        api.getAllSubscriptions(),
-        api.getRecentAttendances(),
-      ]);
+      if (isManager) {
+        const today = new Date().toISOString().split('T')[0];
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-      const active = subs.filter((s) => s.status === 'ACTIVE').length;
-      const totalRev = subs
-        .filter((s) => s.status === 'ACTIVE')
-        .reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+        const [memberStats, revenueReport, accounts] = await Promise.all([
+          api.getMemberStatsReport(7).catch(() => null),
+          api.getRevenueReport(thirtyDaysAgo, today).catch(() => null),
+          api.getAllAccounts().catch(() => []),
+        ]);
 
-      setStats({
-        totalUsers: users.length,
-        activeSubs: active,
-        todayCheckIns: atts.length,
-        totalRevenue: totalRev,
-      });
+        const totalRev = revenueReport?.totalRevenue ? Number(revenueReport.totalRevenue) : 0;
+        const totalMembers = memberStats?.totalMembers ?? accounts.length;
+        const activeMembers = memberStats?.membersWithActivePackage ?? 0;
+        const expiringSoon = memberStats?.expiringSoon ?? 0;
 
-      setRecentAttendances(atts.slice(0, 5));
-      setRecentSubs(subs.slice(0, 5));
+        setStats({
+          totalUsers: totalMembers,
+          activeSubs: activeMembers,
+          todayCheckIns: expiringSoon,
+          totalRevenue: totalRev,
+        });
+      } else {
+        // Receptionist / Member
+        const pkgs = await api.getActivePackages().catch(() => []);
+        setStats({
+          totalUsers: 1,
+          activeSubs: pkgs.length,
+          todayCheckIns: 0,
+          totalRevenue: 0,
+        });
+      }
     } catch (e) {
       console.error(e);
     }
@@ -51,25 +62,25 @@ export default function OverviewPage() {
     {
       title: 'Tổng người dùng & hội viên',
       value: stats.totalUsers,
-      sub: '+12% so với tháng trước',
+      sub: 'Tài khoản ghi nhận hệ thống',
       borderColor: 'border-blue-500/30',
     },
     {
-      title: 'Gói tập đang hoạt động',
+      title: 'Hội viên có gói hiệu lực',
       value: stats.activeSubs,
-      sub: 'Đang khai thác sân & phòng',
+      sub: 'Đang hoạt động tại trung tâm',
       borderColor: 'border-emerald-500/30',
     },
     {
-      title: 'Lượt Check-in hôm nay',
+      title: 'Hết hạn trong 7 ngày tới',
       value: stats.todayCheckIns,
-      sub: 'Lượt vào cơ sở',
+      sub: 'Cần liên hệ hỗ trợ gia hạn',
       borderColor: 'border-purple-500/30',
     },
     {
-      title: 'Doanh thu gói tập',
-      value: `${(stats.totalRevenue / 1000000).toFixed(1)}M ₫`,
-      sub: 'Đối soát tự động qua VietQR',
+      title: 'Doanh thu ghi nhận (30 ngày)',
+      value: `${(stats.totalRevenue ? (stats.totalRevenue / 1000000).toFixed(1) : 0)}M ₫`,
+      sub: 'Thanh toán thành công (Success)',
       borderColor: 'border-amber-500/30',
     },
   ];

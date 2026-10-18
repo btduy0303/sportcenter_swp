@@ -66,7 +66,7 @@ export default function PackageFormModal({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">Thời hạn (Tháng) *</label>
               <input
@@ -94,10 +94,23 @@ export default function PackageFormModal({
             </div>
 
             <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">Cấp độ (Tier) *</label>
+              <select
+                value={formData.tierLevel || 1}
+                onChange={(e) => onChange({ ...formData, tierLevel: Number(e.target.value) })}
+                className="w-full bg-slate-900 border border-slate-700/80 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-emerald-500"
+              >
+                <option value="1">Cấp 1 (Cơ bản)</option>
+                <option value="2">Cấp 2 (Nâng cao)</option>
+                <option value="3">Cấp 3 (VIP Premium)</option>
+              </select>
+            </div>
+
+            <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">Buổi tối đa/tuần *</label>
               <input
                 type="number"
-                min="1"
+                min="0"
                 max="30"
                 required
                 value={formData.maxClassesPerWeek}

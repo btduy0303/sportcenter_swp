@@ -30,10 +30,13 @@ export default function PackagesPage() {
 
   const loadPackages = async () => {
     try {
-      const data = await api.getAllPackages();
-      setPackages(data);
+      const data = isManager
+        ? await api.getAllPackagesManager()
+        : await api.getActivePackages();
+      setPackages(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error(e);
+      setMessage({ type: 'error', text: e.message || 'Lỗi khi tải danh sách gói tập' });
     }
   };
 
@@ -45,6 +48,7 @@ export default function PackagesPage() {
       description: '',
       durationMonths: 1,
       price: 500000,
+      tierLevel: 1,
       maxClassesPerWeek: 3,
       isActive: true,
     });
@@ -53,18 +57,28 @@ export default function PackagesPage() {
 
   const handleOpenEdit = (pkg) => {
     setEditingPackage(pkg);
-    setFormData({ ...pkg });
+    setFormData({
+      code: pkg.code,
+      name: pkg.name,
+      description: pkg.description || '',
+      durationMonths: pkg.durationMonths || 1,
+      price: pkg.price || 0,
+      tierLevel: pkg.tierLevel || 1,
+      maxClassesPerWeek: pkg.maxClassesPerWeek || 3,
+      isActive: pkg.isActive ?? true,
+    });
     setIsModalOpen(true);
   };
 
   const handleDeletePackage = async (pkg) => {
-    if (!window.confirm(`Bạn có chắc muốn vô hiệu hóa gói "${pkg.name}"?`)) return;
+    const nextStatus = !pkg.isActive;
+    if (!window.confirm(`Bạn có chắc muốn ${nextStatus ? 'kích hoạt' : 'ẩn'} gói "${pkg.name}"?`)) return;
     try {
-      await api.deletePackage(pkg.id);
-      setMessage({ type: 'success', text: `Đã vô hiệu hóa gói ${pkg.name}` });
+      await api.updatePackageStatus(pkg.id, { isActive: nextStatus });
+      setMessage({ type: 'success', text: `Đã cập nhật trạng thái gói ${pkg.name}` });
       loadPackages();
     } catch (err) {
-      setMessage({ type: 'error', text: err.message || 'Lỗi khi xóa gói' });
+      setMessage({ type: 'error', text: err.message || 'Lỗi khi cập nhật trạng thái gói' });
     }
   };
 
@@ -72,10 +86,26 @@ export default function PackagesPage() {
     e.preventDefault();
     try {
       if (editingPackage) {
-        await api.updatePackage(editingPackage.id, formData);
+        await api.updatePackage(editingPackage.id, {
+          name: formData.name,
+          description: formData.description,
+          durationMonths: Number(formData.durationMonths),
+          price: Number(formData.price),
+          tierLevel: Number(formData.tierLevel || 1),
+          maxClassesPerWeek: Number(formData.maxClassesPerWeek),
+          isActive: formData.isActive,
+        });
         setMessage({ type: 'success', text: 'Cập nhật gói tập thành công!' });
       } else {
-        await api.createPackage(formData);
+        await api.createPackage({
+          code: formData.code,
+          name: formData.name,
+          description: formData.description,
+          durationMonths: Number(formData.durationMonths),
+          price: Number(formData.price),
+          tierLevel: Number(formData.tierLevel || 1),
+          maxClassesPerWeek: Number(formData.maxClassesPerWeek),
+        });
         setMessage({ type: 'success', text: 'Tạo gói tập mới thành công!' });
       }
       setIsModalOpen(false);

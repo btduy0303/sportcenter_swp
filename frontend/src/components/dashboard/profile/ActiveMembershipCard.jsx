@@ -24,17 +24,17 @@ export default function ActiveMembershipCard({ activeSubs }) {
               className="bg-slate-900/90 rounded-xl p-4 border border-slate-800 space-y-2"
             >
               <div className="flex items-center justify-between">
-                <span className="font-bold text-white text-sm">{sub.packageNameSnapshot}</span>
+                <span className="font-bold text-white text-sm">{sub.packageName || sub.packageNameSnapshot || 'Gói tập'}</span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  ACTIVE
+                  {sub.status || 'ACTIVE'}
                 </span>
               </div>
               <div className="text-xs text-slate-300 flex items-center justify-between">
                 <span>Hạn sử dụng:</span>
-                <strong className="text-emerald-400">{sub.startDate} → {sub.endDate}</strong>
+                <strong className="text-emerald-400">{sub.startDate || '—'} → {sub.endDate || '—'}</strong>
               </div>
               <div className="text-xs text-slate-400">
-                Số buổi còn lại: <strong className="text-white">{sub.remainingSessions ?? 'Không giới hạn'}</strong>
+                Lớp tối đa: <strong className="text-white">{sub.maxClassesPerWeek ? `${sub.maxClassesPerWeek} buổi/tuần` : 'Tiêu chuẩn'}</strong>
               </div>
             </div>
           ))}

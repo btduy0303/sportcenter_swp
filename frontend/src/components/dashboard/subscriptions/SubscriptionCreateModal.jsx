@@ -65,7 +65,7 @@ export default function SubscriptionCreateModal({
             >
               {packages.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.packageName} ({p.durationInMonths} tháng) — {p.price?.toLocaleString('vi-VN')} đ
+                  {p.name || p.packageName} ({p.durationMonths || p.durationInMonths || 1} tháng) — {p.price ? Number(p.price).toLocaleString('vi-VN') : 0} đ
                 </option>
               ))}
             </select>
@@ -75,18 +75,18 @@ export default function SubscriptionCreateModal({
             <div className="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-2 text-xs">
               <div className="flex justify-between text-slate-400">
                 <span>Thời hạn hiệu lực:</span>
-                <span className="text-white font-semibold">{selectedPkg.durationInMonths} tháng</span>
+                <span className="text-white font-semibold">{selectedPkg.durationMonths || selectedPkg.durationInMonths || 1} tháng</span>
               </div>
               <div className="flex justify-between text-slate-400">
-                <span>Buổi tập:</span>
+                <span>Quyền lợi lớp học:</span>
                 <span className="text-white font-semibold">
-                  {selectedPkg.sessionQuota ? `${selectedPkg.sessionQuota} buổi` : 'Không giới hạn'}
+                  {selectedPkg.maxClassesPerWeek ? `${selectedPkg.maxClassesPerWeek} buổi/tuần` : 'Tiêu chuẩn'}
                 </span>
               </div>
               <div className="flex justify-between text-slate-400 pt-2 border-t border-slate-800">
                 <span>Tổng học phí:</span>
                 <span className="text-emerald-400 font-bold text-sm">
-                  {selectedPkg.price?.toLocaleString('vi-VN')} đ
+                  {selectedPkg.price ? Number(selectedPkg.price).toLocaleString('vi-VN') : 0} đ
                 </span>
               </div>
             </div>

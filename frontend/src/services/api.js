@@ -31,7 +31,7 @@ async function request(endpoint, options = {}) {
 
   if (!res.ok) {
     const errorMsg =
-      (typeof data === 'object' && (data.message || data.error)) ||
+      (typeof data === 'object' && (data.message || data.error || (data.errors && Object.values(data.errors).join(', ')))) ||
       (typeof data === 'string' && data) ||
       `Yêu cầu thất bại với mã lỗi HTTP ${res.status}`;
     throw new Error(errorMsg);
@@ -41,7 +41,7 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
-  // Auth
+  // ===================== AUTH =====================
   login: async (email, password) => {
     return request('/auth/login', {
       method: 'POST',
@@ -56,63 +56,107 @@ export const api = {
     });
   },
 
-  // Users
+  // ===================== USERS & PROFILE =====================
   getMyProfile: async () => {
     return request('/users/me', { method: 'GET' });
   },
 
   updateMyProfile: async (data) => {
     return request('/users/me', {
-      method: 'PUT',
+      method: 'PATCH',
       body: JSON.stringify(data),
     });
   },
 
-  searchUsers: async (search = '', role = '') => {
+  updateMemberProfile: async (data) => {
+    return request('/users/me/member-profile', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateCoachProfile: async (data) => {
+    return request('/users/me/coach-profile', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // ===================== MANAGER - ACCOUNT MANAGEMENT =====================
+  getAllAccounts: async () => {
+    return request('/manager/accounts', { method: 'GET' });
+  },
+
+  searchAccounts: async (userName = '') => {
     const q = new URLSearchParams();
-    if (search) q.append('search', search);
-    if (role) q.append('role', role);
+    if (userName) q.append('userName', userName);
     const queryString = q.toString() ? `?${q.toString()}` : '';
-    return request(`/users${queryString}`, { method: 'GET' });
+    return request(`/manager/accounts/search${queryString}`, { method: 'GET' });
   },
 
-  getUserById: async (id) => {
-    return request(`/users/${id}`, { method: 'GET' });
+  getAccountById: async (id) => {
+    return request(`/manager/accounts/${id}`, { method: 'GET' });
   },
 
-  createUser: async (data) => {
-    return request('/users', {
+  createEmployee: async (data) => {
+    return request('/manager/accounts', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  createMember: async (data) => {
-    return request('/users/members', {
+  updateAccountByManager: async (id, data) => {
+    return request(`/manager/accounts/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  activateAccount: async (id) => {
+    return request(`/manager/accounts/${id}/active`, {
+      method: 'PATCH',
+    });
+  },
+
+  deactivateAccount: async (id) => {
+    return request(`/manager/accounts/${id}/deactivate`, {
+      method: 'PATCH',
+    });
+  },
+
+  updateStaffProfile: async (id, data) => {
+    return request(`/manager/accounts/${id}/staff-profile`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  getAllPermissions: async () => {
+    return request('/manager/permissions', { method: 'GET' });
+  },
+
+  // ===================== RECEPTIONIST - MEMBERS =====================
+  searchReceptionistMembers: async (name = '') => {
+    const q = new URLSearchParams();
+    if (name) q.append('name', name);
+    const queryString = q.toString() ? `?${q.toString()}` : '';
+    return request(`/receptionist/members${queryString}`, { method: 'GET' });
+  },
+
+  getReceptionistMemberById: async (id) => {
+    return request(`/receptionist/members/${id}`, { method: 'GET' });
+  },
+
+  createMemberAtCounter: async (data) => {
+    return request('/receptionist/members', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  updateUser: async (id, data) => {
-    return request(`/users/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-
-  deleteUser: async (id) => {
-    return request(`/users/${id}`, { method: 'DELETE' });
-  },
-
-  updateUserStatus: async (id, isActive) => {
-    return request(`/users/${id}/status?isActive=${isActive}`, {
-      method: 'PUT',
-    });
-  },
-
-  // Packages
-  getAllPackages: async () => {
+  // ===================== PACKAGES =====================
+  // Public / Member / Receptionist
+  getActivePackages: async () => {
     return request('/packages', { method: 'GET' });
   },
 
@@ -120,90 +164,230 @@ export const api = {
     return request(`/packages/${id}`, { method: 'GET' });
   },
 
+  // Manager Package CRUD
+  getAllPackagesManager: async () => {
+    return request('/manager/packages', { method: 'GET' });
+  },
+
   createPackage: async (data) => {
-    return request('/packages', {
+    return request('/manager/packages', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
   updatePackage: async (id, data) => {
-    return request(`/packages/${id}`, {
-      method: 'PUT',
+    return request(`/manager/packages/${id}`, {
+      method: 'PATCH',
       body: JSON.stringify(data),
     });
   },
 
-  deletePackage: async (id) => {
-    return request(`/packages/${id}`, { method: 'DELETE' });
+  updatePackageStatus: async (id, data) => {
+    return request(`/manager/packages/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
   },
 
-  // Subscriptions
-  getAllSubscriptions: async () => {
-    return request('/subscriptions', { method: 'GET' });
-  },
-
+  // ===================== SUBSCRIPTIONS =====================
+  // Member subscriptions
   getMySubscriptions: async () => {
-    return request('/subscriptions/me', { method: 'GET' });
+    return request('/member/subscriptions/me', { method: 'GET' });
   },
 
-  getUserSubscriptions: async (userId) => {
-    return request(`/subscriptions/user/${userId}`, { method: 'GET' });
+  getMyActiveSubscription: async () => {
+    return request('/member/subscriptions/me/status', { method: 'GET' });
+  },
+
+  subscribeMember: async (packageId) => {
+    return request('/member/subscriptions', {
+      method: 'POST',
+      body: JSON.stringify({ packageId }),
+    });
+  },
+
+  renewMySubscription: async (packageId) => {
+    return request('/member/subscriptions/renew', {
+      method: 'POST',
+      body: JSON.stringify({ packageId }),
+    });
+  },
+
+  upgradeMySubscription: async (packageId) => {
+    return request('/member/subscriptions/upgrade', {
+      method: 'POST',
+      body: JSON.stringify({ packageId }),
+    });
+  },
+
+  cancelMyPendingSubscription: async (id) => {
+    return request(`/member/subscriptions/${id}/cancel`, {
+      method: 'PATCH',
+    });
+  },
+
+  startOnlinePayment: async (id) => {
+    return request(`/member/subscriptions/${id}/online-payment`, {
+      method: 'POST',
+    });
+  },
+
+  checkOnlinePayment: async (id) => {
+    return request(`/member/subscriptions/${id}/online-payment/check`, {
+      method: 'POST',
+    });
+  },
+
+  // Receptionist subscriptions for member
+  getMemberSubscriptionsReceptionist: async (memberId) => {
+    return request(`/receptionist/members/${memberId}/subscriptions`, { method: 'GET' });
+  },
+
+  createSubscriptionForMember: async (memberId, packageId) => {
+    return request(`/receptionist/members/${memberId}/subscriptions`, {
+      method: 'POST',
+      body: JSON.stringify({ packageId }),
+    });
+  },
+
+  renewSubscriptionForMember: async (memberId, packageId) => {
+    return request(`/receptionist/members/${memberId}/subscriptions/renew`, {
+      method: 'POST',
+      body: JSON.stringify({ packageId }),
+    });
+  },
+
+  upgradeSubscriptionForMember: async (memberId, packageId) => {
+    return request(`/receptionist/members/${memberId}/subscriptions/upgrade`, {
+      method: 'POST',
+      body: JSON.stringify({ packageId }),
+    });
+  },
+
+  cancelSubscriptionForMember: async (memberId, id) => {
+    return request(`/receptionist/members/${memberId}/subscriptions/${id}/cancel`, {
+      method: 'PATCH',
+    });
+  },
+
+  // ===================== PAYMENTS & INVOICES =====================
+  // Member Payments
+  getMyPayments: async () => {
+    return request('/member/payments/me', { method: 'GET' });
+  },
+
+  getMyInvoice: async (id) => {
+    return request(`/member/payments/${id}/invoice`, { method: 'GET' });
+  },
+
+  // Receptionist Payments
+  payCashAtCounter: async (subscriptionId) => {
+    return request('/receptionist/payments/cash', {
+      method: 'POST',
+      body: JSON.stringify({ subscriptionId }),
+    });
+  },
+
+  getMemberPaymentsReceptionist: async (memberId) => {
+    return request(`/receptionist/payments?memberId=${memberId}`, { method: 'GET' });
+  },
+
+  getInvoiceReceptionist: async (id) => {
+    return request(`/receptionist/payments/${id}/invoice`, { method: 'GET' });
+  },
+
+  // ===================== REPORTS (MANAGER) =====================
+  getRevenueReport: async (from, to, groupBy = 'DAY') => {
+    return request(`/manager/reports/revenue?from=${from}&to=${to}&groupBy=${groupBy}`, { method: 'GET' });
+  },
+
+  getMemberStatsReport: async (expiringWithinDays = 7) => {
+    return request(`/manager/reports/members?expiringWithinDays=${expiringWithinDays}`, { method: 'GET' });
+  },
+
+  // Backward compatibility alias methods to prevent sudden breaks in untouched components
+  getAllPackages: async () => {
+    return request('/packages', { method: 'GET' });
+  },
+
+  searchUsers: async (search = '') => {
+    return request(`/manager/accounts/search?userName=${encodeURIComponent(search)}`, { method: 'GET' });
+  },
+
+  createUser: async (data) => {
+    return request('/manager/accounts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  createMember: async (data) => {
+    return request('/receptionist/members', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  getUserById: async (id) => {
+    return request(`/manager/accounts/${id}`, { method: 'GET' });
+  },
+
+  updateUser: async (id, data) => {
+    return request(`/manager/accounts/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateUserStatus: async (id, isActive) => {
+    return request(`/manager/accounts/${id}/${isActive ? 'active' : 'deactivate'}`, {
+      method: 'PATCH',
+    });
+  },
+
+  deleteUser: async (id) => {
+    return request(`/manager/accounts/${id}/deactivate`, {
+      method: 'PATCH',
+    });
+  },
+
+  getAllSubscriptions: async () => {
+    return request('/member/subscriptions/me', { method: 'GET' });
   },
 
   getMyActiveSubscriptions: async () => {
-    return request('/subscriptions/me/active', { method: 'GET' });
+    return request('/member/subscriptions/me/status', { method: 'GET' });
   },
 
   createSubscription: async (data) => {
-    return request('/subscriptions', {
+    if (data.memberId) {
+      return request(`/receptionist/members/${data.memberId}/subscriptions`, {
+        method: 'POST',
+        body: JSON.stringify({ packageId: data.packageId }),
+      });
+    }
+    return request('/member/subscriptions', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ packageId: data.packageId }),
     });
   },
 
   subscribeMe: async (packageId) => {
-    return request(`/subscriptions/me?packageId=${packageId}`, {
+    return request('/member/subscriptions', {
       method: 'POST',
+      body: JSON.stringify({ packageId }),
     });
   },
 
-  // Payments
   getAllPayments: async () => {
-    return request('/payments', { method: 'GET' });
+    return request('/member/payments/me', { method: 'GET' });
   },
 
   processPayment: async (data) => {
-    return request('/payments', {
+    return request('/receptionist/payments/cash', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ subscriptionId: data.subscriptionId }),
     });
-  },
-
-  // Attendances
-  getRecentAttendances: async () => {
-    return request('/attendances', { method: 'GET' });
-  },
-
-  getUserAttendances: async (userId) => {
-    return request(`/attendances/user/${userId}`, { method: 'GET' });
-  },
-
-  checkIn: async (data) => {
-    return request('/attendances/check-in', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  checkOut: async (id) => {
-    return request(`/attendances/check-out/${id}`, {
-      method: 'PUT',
-    });
-  },
-
-  // Roles
-  getAllRoles: async () => {
-    return request('/roles', { method: 'GET' });
   },
 };

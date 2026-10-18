@@ -58,8 +58,8 @@ export default function RecentActivities({ attendances, subscriptions }) {
                 className="bg-slate-900/90 rounded-xl p-3 border border-slate-800 flex items-center justify-between"
               >
                 <div>
-                  <div className="text-xs font-bold text-white">{sub.userFullName}</div>
-                  <div className="text-[11px] text-slate-400">{sub.packageNameSnapshot}</div>
+                  <div className="text-xs font-bold text-white">{sub.memberName || sub.userFullName || 'Hội viên'}</div>
+                  <div className="text-[11px] text-slate-400">{sub.packageName || sub.packageNameSnapshot || 'Gói dịch vụ'}</div>
                 </div>
 
                 <div className="text-right">

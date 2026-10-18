@@ -45,14 +45,14 @@ export default function SubscriptionTable({
                 </td>
 
                 <td className="py-3.5 px-4">
-                  <div className="font-bold text-white">{sub.userFullName}</div>
-                  <div className="text-[11px] text-slate-400 font-mono">ID: #{sub.userId}</div>
+                  <div className="font-bold text-white">{sub.memberName || sub.userFullName || 'Hội viên'}</div>
+                  <div className="text-[11px] text-slate-400 font-mono">ID: #{sub.memberId || sub.userId}</div>
                 </td>
 
                 <td className="py-3.5 px-4">
-                  <div className="font-semibold text-emerald-400">{sub.packageNameSnapshot}</div>
+                  <div className="font-semibold text-emerald-400">{sub.packageName || sub.packageNameSnapshot}</div>
                   <div className="text-[11px] text-slate-400">
-                    Số buổi: {sub.remainingSessions !== null ? sub.remainingSessions : 'Không giới hạn'}
+                    {sub.maxClassesPerWeek ? `${sub.maxClassesPerWeek} buổi/tuần` : 'Tiêu chuẩn'} • {sub.durationMonths || 1} tháng
                   </div>
                 </td>
 
@@ -62,7 +62,7 @@ export default function SubscriptionTable({
                 </td>
 
                 <td className="py-3.5 px-4 font-semibold text-white">
-                  {sub.totalAmount?.toLocaleString('vi-VN')} đ
+                  {sub.totalAmount ? Number(sub.totalAmount).toLocaleString('vi-VN') : 0} đ
                 </td>
 
                 <td className="py-3.5 px-4">
@@ -77,7 +77,7 @@ export default function SubscriptionTable({
 
                 <td className="py-3.5 px-4 text-right">
                   <div className="flex items-center justify-end gap-1.5">
-                    {sub.status === 'PENDING' && (isReceptionist || isMember) && (
+                    {sub.status === 'PENDING' && (
                       <button
                         type="button"
                         onClick={() => onOpenPayment(sub)}

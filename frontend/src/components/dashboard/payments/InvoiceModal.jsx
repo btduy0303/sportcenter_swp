@@ -23,29 +23,35 @@ export default function InvoiceModal({ invoice, onClose }) {
         <div className="py-4 space-y-2.5 text-xs text-slate-300">
           <div className="flex justify-between">
             <span className="text-slate-400">Khách hàng:</span>
-            <span className="font-bold text-white">{invoice.payerName}</span>
+            <span className="font-bold text-white">{invoice.memberName || invoice.payerName || 'Hội viên'}</span>
           </div>
+          {invoice.packageName && (
+            <div className="flex justify-between">
+              <span className="text-slate-400">Gói đăng ký:</span>
+              <span className="font-semibold text-emerald-400">{invoice.packageName}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-slate-400">Mã giao dịch:</span>
-            <span className="font-mono text-slate-300">{invoice.transactionCode}</span>
+            <span className="font-mono text-slate-300">{invoice.transactionCode || '—'}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-400">Hình thức thanh toán:</span>
-            <span className="font-semibold text-slate-200">{invoice.paymentMethod}</span>
+            <span className="font-semibold text-slate-200">{invoice.paymentMethod || 'CASH'}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-400">Thời gian thu:</span>
-            <span>{new Date(invoice.paidAt).toLocaleString('vi-VN')}</span>
+            <span>{invoice.paidAt ? new Date(invoice.paidAt).toLocaleString('vi-VN') : '—'}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-400">Thu ngân:</span>
-            <span>{invoice.receivedBy}</span>
+            <span>{invoice.receivedByName || invoice.receivedBy || (invoice.paymentMethod === 'ONLINE' ? 'Cổng trực tuyến PayOS' : 'Lễ tân')}</span>
           </div>
 
           <div className="pt-3 border-t border-slate-800 flex justify-between items-center text-sm">
             <span className="font-bold text-white">Tổng thanh toán:</span>
             <span className="text-xl font-black text-emerald-400">
-              {(invoice.amount || 0).toLocaleString('vi-VN')} ₫
+              {(invoice.amount ? Number(invoice.amount) : 0).toLocaleString('vi-VN')} ₫
             </span>
           </div>
         </div>

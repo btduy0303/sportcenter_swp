@@ -32,10 +32,10 @@ export default function PackageCard({ pkg, isManager, onSelect, onEdit, onDelete
 
         <div className="pt-2 border-t border-slate-800">
           <div className="text-2xl font-black text-emerald-400">
-            {(pkg.price || 0).toLocaleString('vi-VN')} ₫
+            {(pkg.price ? Number(pkg.price) : 0).toLocaleString('vi-VN')} ₫
           </div>
           <div className="text-[11px] text-slate-400 mt-0.5">
-            Thời hạn: <strong className="text-white">{pkg.durationMonths} Tháng</strong>
+            Thời hạn: <strong className="text-white">{pkg.durationMonths || 1} Tháng</strong> • Cấp độ {pkg.tierLevel || 1}
           </div>
         </div>
 
@@ -66,9 +66,13 @@ export default function PackageCard({ pkg, isManager, onSelect, onEdit, onDelete
             <button
               type="button"
               onClick={() => onDelete(pkg)}
-              className="px-2.5 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 text-xs font-medium border border-rose-900/40"
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border ${
+                pkg.isActive
+                  ? 'bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border-rose-900/40'
+                  : 'bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 border-emerald-900/40'
+              }`}
             >
-              Xóa
+              {pkg.isActive ? 'Ẩn' : 'Hiện'}
             </button>
           </div>
         )}

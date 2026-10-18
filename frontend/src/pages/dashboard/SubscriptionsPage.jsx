@@ -39,35 +39,53 @@ export default function SubscriptionsPage() {
 
   const loadAll = async () => {
     try {
-      const [subsData, usersData, pkgsData] = await Promise.all([
-        isMember ? api.getMySubscriptions() : api.getAllSubscriptions(),
-        api.searchUsers('', 'MEMBER'),
-        api.getAllPackages(),
-      ]);
-      setSubscriptions(subsData);
-      setUsers(usersData);
-      setPackages(pkgsData.filter((p) => p.isActive));
+      let subsData = [];
+      let membersData = [];
+      const pkgsData = await api.getActivePackages();
+      setPackages(Array.isArray(pkgsData) ? pkgsData.filter((p) => p.isActive !== false) : []);
 
-      if (usersData.length > 0 && !registerForm.userId) {
+      if (isMember) {
+        subsData = await api.getMySubscriptions();
+      } else {
+        // Receptionist or Manager
+        membersData = isManager ? await api.getAllAccounts() : await api.searchReceptionistMembers('');
+        const onlyMembers = Array.isArray(membersData) ? membersData.filter((u) => u.role === 'MEMBER') : [];
+        setUsers(onlyMembers);
+
+        // Fetch subscriptions for selected or first member
+        const targetMemberId = registerForm.userId || onlyMembers[0]?.id;
+        if (targetMemberId) {
+          try {
+            subsData = await api.getMemberSubscriptionsReceptionist(targetMemberId);
+          } catch {
+            subsData = [];
+          }
+        }
+      }
+
+      setSubscriptions(Array.isArray(subsData) ? subsData : []);
+
+      if (membersData.length > 0 && !registerForm.userId) {
         setRegisterForm((prev) => ({
           ...prev,
-          userId: isMember ? user?.id : usersData[0].id,
+          userId: isMember ? user?.id : membersData[0].id,
           packageId: prev.packageId || (pkgsData[0]?.id || ''),
         }));
       }
     } catch (e) {
       console.error(e);
+      setMessage({ type: 'error', text: e.message || 'Lỗi khi tải dữ liệu gói tập' });
     }
   };
 
   const handleCreateSub = async (e) => {
     e.preventDefault();
     try {
-      const targetUserId = isMember ? user?.id : registerForm.userId;
-      await api.createSubscription(
-        { userId: targetUserId, packageId: registerForm.packageId },
-        user?.fullName
-      );
+      if (isMember) {
+        await api.subscribeMember(Number(registerForm.packageId));
+      } else {
+        await api.createSubscriptionForMember(Number(registerForm.userId), Number(registerForm.packageId));
+      }
       setMessage({ type: 'success', text: 'Tạo đơn đăng ký thành công! Đang chờ thanh toán.' });
       setIsRegisterOpen(false);
       loadAll();
@@ -78,13 +96,14 @@ export default function SubscriptionsPage() {
 
   const handleRenewSub = async (sub) => {
     try {
-      await api.createSubscription(
-        { userId: sub.userId, packageId: sub.packageId },
-        user?.fullName
-      );
+      if (isMember) {
+        await api.renewMySubscription(Number(sub.packageId));
+      } else {
+        await api.renewSubscriptionForMember(Number(sub.memberId), Number(sub.packageId));
+      }
       setMessage({
         type: 'success',
-        text: `Đã tạo yêu cầu gia hạn gói cho ${sub.userFullName}! Vui lòng thanh toán để tự động nối tiếp ngày sử dụng.`,
+        text: `Đã tạo yêu cầu gia hạn gói! Vui lòng thanh toán để kích hoạt tiếp thời hạn sử dụng.`,
       });
       loadAll();
     } catch (err) {
@@ -100,14 +119,23 @@ export default function SubscriptionsPage() {
   const handleConfirmPayment = async (e) => {
     e.preventDefault();
     try {
-      await api.processPayment({
-        subscriptionId: selectedSubForPay.id,
-        amount: selectedSubForPay.totalAmount,
-        paymentMethod,
-      });
+      if (paymentMethod === 'VIETQR' && isMember) {
+        const linkRes = await api.startOnlinePayment(selectedSubForPay.id);
+        if (linkRes && linkRes.checkoutUrl) {
+          setMessage({
+            type: 'success',
+            text: 'Đang chuyển hướng sang cổng thanh toán VietQR / PayOS...',
+          });
+          window.location.href = linkRes.checkoutUrl;
+          return;
+        }
+      }
+
+      // Cash payment at counter or default
+      await api.payCashAtCounter(selectedSubForPay.id);
       setMessage({
         type: 'success',
-        text: `Thanh toán thành công! Gói tập của ${selectedSubForPay.userFullName} đã được kích hoạt.`,
+        text: `Thanh toán thành công! Gói tập #${selectedSubForPay.id} đã được kích hoạt.`,
       });
       setIsPayOpen(false);
       loadAll();

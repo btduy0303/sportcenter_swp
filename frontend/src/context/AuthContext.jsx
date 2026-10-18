@@ -38,13 +38,32 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await api.login(email, password);
-      setToken(res.token);
-      const userInfo = {
-        id: res.userId,
+      const jwt = res.jwtToken || res.token;
+      if (jwt) {
+        localStorage.setItem('sportcenter_token', jwt);
+        setToken(jwt);
+      }
+
+      let userInfo = {
+        id: res.id || res.userId || null,
         email: res.email,
         fullName: res.fullName,
         role: res.role,
       };
+
+      try {
+        const profile = await api.getMyProfile();
+        if (profile) {
+          userInfo = {
+            ...userInfo,
+            ...profile,
+            id: profile.id || userInfo.id,
+          };
+        }
+      } catch {
+        // Fallback to basic credentials returned from login
+      }
+
       setUser(userInfo);
       return userInfo;
     } finally {

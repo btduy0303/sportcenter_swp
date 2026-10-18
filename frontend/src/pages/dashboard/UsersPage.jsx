@@ -44,8 +44,21 @@ export default function UsersPage() {
 
   const loadUsers = async () => {
     try {
-      const data = await api.searchUsers(search, roleFilter);
-      setUsers(data);
+      let data = [];
+      if (isManager) {
+        if (search) {
+          data = await api.searchAccounts(search);
+        } else {
+          data = await api.getAllAccounts();
+        }
+      } else {
+        data = await api.searchReceptionistMembers(search);
+      }
+      
+      if (Array.isArray(data) && roleFilter) {
+        data = data.filter((u) => u.role === roleFilter);
+      }
+      setUsers(Array.isArray(data) ? data : []);
     } catch (e) {
       setMessage({ type: 'error', text: e.message || 'Không thể tải danh sách người dùng' });
     }
@@ -55,16 +68,20 @@ export default function UsersPage() {
     const nextStatus = !user.isActive;
     setConfirmModal({
       isOpen: true,
-      title: nextStatus ? 'Xác nhận mở khóa tài khoản' : 'Xác nhận khóa tài khoản',
-      message: `Bạn đang yêu cầu ${nextStatus ? 'mở khóa' : 'khóa'} tài khoản "${user.fullName}". Vui lòng chờ 5 giây để xác nhận an toàn.`,
-      confirmText: nextStatus ? 'Mở khóa ngay' : 'Khóa tài khoản',
+      title: nextStatus ? 'Xác nhận kích hoạt tài khoản' : 'Xác nhận khóa tài khoản',
+      message: `Bạn đang yêu cầu ${nextStatus ? 'kích hoạt' : 'khóa'} tài khoản "${user.fullName}".`,
+      confirmText: nextStatus ? 'Kích hoạt ngay' : 'Khóa tài khoản',
       type: nextStatus ? 'primary' : 'danger',
       action: async () => {
         try {
-          await api.updateUserStatus(user.id, nextStatus);
+          if (nextStatus) {
+            await api.activateAccount(user.id);
+          } else {
+            await api.deactivateAccount(user.id);
+          }
           setMessage({
             type: 'success',
-            text: `Đã ${nextStatus ? 'mở khóa' : 'khóa'} tài khoản ${user.fullName} thành công!`,
+            text: `Đã ${nextStatus ? 'kích hoạt' : 'khóa'} tài khoản ${user.fullName} thành công!`,
           });
           loadUsers();
         } catch (err) {
@@ -77,17 +94,17 @@ export default function UsersPage() {
   const handleRequestDeleteUser = (user) => {
     setConfirmModal({
       isOpen: true,
-      title: 'Xác nhận xóa tài khoản người dùng',
-      message: `Hành động này sẽ xóa người dùng "${user.fullName}" (ID: #${user.id}) khỏi cơ sở dữ liệu. Thao tác không thể hoàn tác. Vui lòng chờ 5 giây để xác nhận.`,
-      confirmText: 'Xác nhận xóa vĩnh viễn',
+      title: 'Xác nhận vô hiệu hóa tài khoản',
+      message: `Hành động này sẽ vô hiệu hóa tài khoản "${user.fullName}" (ID: #${user.id}). Người dùng sẽ không thể đăng nhập vào hệ thống.`,
+      confirmText: 'Vô hiệu hóa tài khoản',
       type: 'danger',
       action: async () => {
         try {
-          await api.deleteUser(user.id);
-          setMessage({ type: 'success', text: `Đã xóa tài khoản ${user.fullName} thành công!` });
+          await api.deactivateAccount(user.id);
+          setMessage({ type: 'success', text: `Đã vô hiệu hóa tài khoản ${user.fullName} thành công!` });
           loadUsers();
         } catch (err) {
-          setMessage({ type: 'error', text: err.message || 'Lỗi khi xóa người dùng' });
+          setMessage({ type: 'error', text: err.message || 'Lỗi khi vô hiệu hóa người dùng' });
         }
       },
     });
@@ -96,10 +113,21 @@ export default function UsersPage() {
   const handleCreateUser = async (e) => {
     e.preventDefault();
     try {
-      if (isManager) {
-        await api.createUser(formData);
+      if (isManager && formData.roleCode !== 'MEMBER') {
+        await api.createEmployee({
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+          roleCode: formData.roleCode,
+        });
       } else {
-        await api.createMember(formData);
+        await api.createMemberAtCounter({
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+        });
       }
       setMessage({ type: 'success', text: 'Tạo tài khoản mới thành công!' });
       setIsCreateOpen(false);
@@ -123,12 +151,17 @@ export default function UsersPage() {
     setConfirmModal({
       isOpen: true,
       title: 'Xác nhận lưu thay đổi thông tin',
-      message: `Cập nhật thông tin cho "${selectedUser.fullName}". Vui lòng chờ 5 giây để xác nhận lưu vào hệ thống.`,
+      message: `Cập nhật thông tin cho "${selectedUser.fullName}". Vui lòng xác nhận lưu vào hệ thống.`,
       confirmText: 'Lưu thay đổi',
       type: 'primary',
       action: async () => {
         try {
-          await api.updateUser(selectedUser.id, selectedUser);
+          await api.updateAccountByManager(selectedUser.id, {
+            fullName: selectedUser.fullName,
+            phone: selectedUser.phone,
+            gender: selectedUser.gender,
+            dateOfBirth: selectedUser.dateOfBirth,
+          });
           setMessage({ type: 'success', text: 'Cập nhật thông tin thành công!' });
           setIsEditOpen(false);
           loadUsers();
