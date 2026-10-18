@@ -11,6 +11,7 @@
 8. [Cơ chế An toàn đặc biệt: Đếm ngược 5 giây khi xóa/khóa](#8-co-che-an-toan-dac-biet-dem-nguoc-5-giay)
 9. [Hệ thống tự động thông báo (Toast)](#9-he-thong-tu-dong-thong-bao-toast)
 10. [Bộ câu hỏi thường gặp khi bảo vệ đồ án / thuyết trình](#10-bo-cau-hoi-thuong-gap-khi-thuyet-trinh)
+11. [Hướng dẫn cài đặt và chạy Frontend từ A-Z (Từ máy mới chưa có thư viện)](#11-huong-dan-cai-dat-va-chay-frontend-tu-a-z)
 
 ---
 
@@ -333,3 +334,96 @@ Mọi thao tác của người dùng đều nhận được phản hồi trực 
 
 ---
 *Tài liệu được tổng hợp và biên soạn dành riêng cho dự án SportCenter SWP Frontend.*
+
+---
+
+## 11. HƯỚNG DẪN CÀI ĐẶT VÀ CHẠY FRONTEND TỪ A-Z (TỪ MÁY MỚI CHƯA CÓ THƯ VIỆN)
+
+> Phần này hướng dẫn chi tiết từng bước cho người mới, kể cả khi bạn vừa tải code về máy tính hoàn toàn mới (chưa có thư viện `node_modules`).
+
+### Bước 1: Kiểm tra công cụ cần thiết trên máy tính (Node.js)
+Frontend của dự án chạy trên nền tảng **Node.js** (môi trường thực thi JavaScript).
+1. Mở cửa sổ dòng lệnh:
+   - Trên bàn phím, bấm tổ hợp phím **Windows + R**, gõ `cmd` hoặc `powershell` rồi bấm **Enter**.
+2. Kiểm tra xem máy đã cài Node.js chưa bằng cách gõ:
+   ```bash
+   node -v
+   npm -v
+   ```
+3. **Kết quả**:
+   - Nếu hiện phiên bản (Ví dụ: `v18.x.x` hoặc `v20.x.x` trở lên) $\rightarrow$ Máy đã có sẵn, chuyển sang Bước 2.
+   - Nếu báo lỗi `'node' is not recognized` $\rightarrow$ Máy chưa có Node.js: Hãy vào trang chủ [nodejs.org](https://nodejs.org/), tải bản **LTS (Recommended For Most Users)** về và cài đặt (chỉ cần bấm Next liên tục cho đến khi Hoàn tất).
+
+---
+
+### Bước 2: Mở thư mục dự án Frontend trong Terminal
+1. Mở thư mục code của bạn: `c:\Users\PC\Desktop\swp_duy\frontend`.
+2. Mẹo mở nhanh:
+   - Mở thư mục `frontend` trên File Explorer (nơi có file `package.json`).
+   - Bấm vào thanh đường dẫn ở trên cùng, gõ chữ `cmd` hoặc `powershell` rồi bấm **Enter**.
+   - Cửa sổ dòng lệnh màu đen sẽ mở ra ngay tại thư mục `frontend`.
+
+---
+
+### Bước 3: Cài đặt toàn bộ thư viện (Khi chưa có thư mục `node_modules`)
+> **Thư viện là gì?**  
+> Trong code dự án có file `package.json` liệt kê sẵn danh sách các "nguyên liệu / phụ tùng" cần dùng (như React 19, Vite, TailwindCSS, Lucide Icons...). Bạn không cần tải từng cái thủ công, chỉ cần chạy 1 câu lệnh duy nhất để máy tự động tải tất cả về máy.
+
+Chạy câu lệnh sau:
+```bash
+npm install
+```
+*(hoặc viết tắt là `npm i`)*
+
+- **Quá trình diễn ra**: Màn hình sẽ chạy thanh tiến trình tải các gói thư viện từ Internet về.
+- **Thời gian**: Mất khoảng 1 - 2 phút tùy tốc độ mạng.
+- **Dấu hiệu thành công**: Màn hình hiện thông báo `added ... packages in ...s` và bạn sẽ thấy xuất hiện một thư mục tên là **`node_modules`** trong thư mục `frontend`.
+
+---
+
+### Bước 4: Kiểm tra cấu hình kết nối Backend (`.env`)
+1. Trong thư mục `frontend`, kiểm tra xem đã có file tên là **`.env`** chưa.
+2. Nếu chưa có, tạo 1 file tên `.env` (hoặc sao chép từ file `.env.example`) với nội dung sau:
+   ```env
+   VITE_API_BASE_URL=http://localhost:8080/api
+   ```
+   *(Dòng này chỉ định cho Frontend biết máy chủ Backend đang chạy ở cổng 8080).*
+
+---
+
+### Bước 5: Khởi động giao diện Frontend (Run Dev)
+Sau khi đã cài xong thư viện, bạn chạy câu lệnh:
+```bash
+npm run dev
+```
+
+- **Màn hình hiển thị**:
+  ```text
+    VITE v6.x.x  ready in 300 ms
+
+    ➜  Local:   http://localhost:5173/
+    ➜  Network: use --host to expose
+    ➜  press h + enter to show help
+  ```
+- **Mở trang web**:
+  - Giữ phím **Ctrl** và click chuột trái vào đường link `http://localhost:5173/` (hoặc mở trình duyệt Chrome/Cốc Cốc/Edge gõ `http://localhost:5173` rồi Enter).
+  - Giao diện SportCenter sẽ xuất hiện ngay lập tức!
+
+---
+
+### Bước 6: Cách tắt hoặc dừng chạy Frontend
+- Khi không muốn chạy nữa hoặc muốn tắt máy:
+  - Quay lại cửa sổ Terminal đang chạy, bấm tổ hợp phím **Ctrl + C**.
+  - Nếu hỏi `Terminate batch job (Y/N)?`, gõ chữ **`y`** rồi bấm **Enter**.
+
+---
+
+### 💡 Bảng tóm tắt các lỗi thường gặp khi chạy Frontend và cách xử lý
+
+| Trường hợp lỗi | Nguyên nhân | Cách xử lý đơn giản |
+| :--- | :--- | :--- |
+| **`'vite' is not recognized...`** | Chưa cài đặt thư viện hoặc thư mục `node_modules` bị lỗi/thiếu. | Chạy lại lệnh: `npm install` rồi thử lại `npm run dev`. |
+| **`Port 5173 is in use`** | Cổng 5173 đang bị một chương trình khác (hoặc tab terminal cũ) chiếm dụng. | Vite sẽ tự động đổi sang cổng tiếp theo như `http://localhost:5174/`. Bạn chỉ cần mở đúng link mới hiển thị trên màn hình. |
+| **Bấm Đăng nhập báo "Không thể kết nối Backend"** | Do bạn chưa bật ứng dụng Backend (Java Spring Boot 8080) hoặc MySQL/Database chưa chạy. | Bật project Backend trong IntelliJ/Eclipse hoặc chạy file jar của Backend trước. Frontend vẫn hoạt động bình thường, chỉ các tính năng cần gọi dữ liệu thật mới cần Backend. |
+| **Trang web bị lỗi trắng xóa** | Bộ nhớ cache của trình duyệt bị kẹt dữ liệu cũ. | Bấm tổ hợp phím **Ctrl + Shift + R** (hoặc Ctrl + F5) trên trình duyệt để xóa sạch bộ nhớ đệm và tải lại trang. |
+
