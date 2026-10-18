@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const toast = useToast();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('manager@sportcenter.vn');
@@ -17,10 +19,13 @@ export default function LoginPage() {
     setError('');
     setSubmitting(true);
     try {
-      await login(email, password);
+      const user = await login(email, password);
+      toast.success(`Đăng nhập thành công! Chào mừng ${user?.fullName || 'bạn'}`);
       navigate('/app');
     } catch (err) {
-      setError(err.message || 'Email hoặc mật khẩu không chính xác');
+      const errorMsg = err.message || 'Email hoặc mật khẩu không chính xác';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setSubmitting(false);
     }

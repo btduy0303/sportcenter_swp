@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import UserFilterBar from '../../components/dashboard/users/UserFilterBar';
 import UserTable from '../../components/dashboard/users/UserTable';
 import UserCreateModal from '../../components/dashboard/users/UserCreateModal';
@@ -9,10 +10,10 @@ import CountdownConfirmModal from '../../components/common/CountdownConfirmModal
 
 export default function UsersPage() {
   const { isManager, isReceptionist } = useAuth();
+  const toast = useToast();
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
-  const [message, setMessage] = useState({ type: '', text: '' });
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -60,7 +61,7 @@ export default function UsersPage() {
       }
       setUsers(Array.isArray(data) ? data : []);
     } catch (e) {
-      setMessage({ type: 'error', text: e.message || 'Không thể tải danh sách người dùng' });
+      toast.error(e.message || 'Không thể tải danh sách người dùng');
     }
   };
 
@@ -79,13 +80,10 @@ export default function UsersPage() {
           } else {
             await api.deactivateAccount(user.id);
           }
-          setMessage({
-            type: 'success',
-            text: `Đã ${nextStatus ? 'kích hoạt' : 'khóa'} tài khoản ${user.fullName} thành công!`,
-          });
+          toast.success(`Đã ${nextStatus ? 'kích hoạt' : 'khóa'} tài khoản ${user.fullName} thành công!`);
           loadUsers();
         } catch (err) {
-          setMessage({ type: 'error', text: err.message || 'Lỗi khi cập nhật trạng thái' });
+          toast.error(err.message || 'Lỗi khi cập nhật trạng thái');
         }
       },
     });
@@ -101,10 +99,10 @@ export default function UsersPage() {
       action: async () => {
         try {
           await api.deactivateAccount(user.id);
-          setMessage({ type: 'success', text: `Đã vô hiệu hóa tài khoản ${user.fullName} thành công!` });
+          toast.success(`Đã vô hiệu hóa tài khoản ${user.fullName} thành công!`);
           loadUsers();
         } catch (err) {
-          setMessage({ type: 'error', text: err.message || 'Lỗi khi vô hiệu hóa người dùng' });
+          toast.error(err.message || 'Lỗi khi vô hiệu hóa người dùng');
         }
       },
     });
@@ -129,7 +127,7 @@ export default function UsersPage() {
           password: formData.password,
         });
       }
-      setMessage({ type: 'success', text: 'Tạo tài khoản mới thành công!' });
+      toast.success('Tạo tài khoản mới thành công!');
       setIsCreateOpen(false);
       setFormData({
         fullName: '',
@@ -142,7 +140,7 @@ export default function UsersPage() {
       });
       loadUsers();
     } catch (err) {
-      setMessage({ type: 'error', text: err.message || 'Tạo tài khoản thất bại' });
+      toast.error(err.message || 'Tạo tài khoản thất bại');
     }
   };
 
@@ -162,11 +160,11 @@ export default function UsersPage() {
             gender: selectedUser.gender,
             dateOfBirth: selectedUser.dateOfBirth,
           });
-          setMessage({ type: 'success', text: 'Cập nhật thông tin thành công!' });
+          toast.success('Cập nhật thông tin thành công!');
           setIsEditOpen(false);
           loadUsers();
         } catch (err) {
-          setMessage({ type: 'error', text: err.message || 'Cập nhật thất bại' });
+          toast.error(err.message || 'Cập nhật thất bại');
         }
       },
     });
@@ -180,7 +178,7 @@ export default function UsersPage() {
           <p className="text-xs text-slate-400">Danh sách nhân sự, huấn luyện viên và hồ sơ hội viên</p>
         </div>
 
-        {isReceptionist && (
+        {(isManager || isReceptionist) && (
           <button
             type="button"
             onClick={() => setIsCreateOpen(true)}
@@ -191,18 +189,7 @@ export default function UsersPage() {
         )}
       </div>
 
-      {message.text && (
-        <div
-          className={`p-3 rounded-xl text-xs flex items-center justify-between ${
-            message.type === 'success'
-              ? 'bg-emerald-950/50 border border-emerald-800 text-emerald-300'
-              : 'bg-rose-950/50 border border-rose-800 text-rose-300'
-          }`}
-        >
-          <span>{message.text}</span>
-          <button type="button" onClick={() => setMessage({ type: '', text: '' })}>✕</button>
-        </div>
-      )}
+
 
       <UserFilterBar
         search={search}

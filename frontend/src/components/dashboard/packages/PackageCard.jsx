@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function PackageCard({ pkg, isManager, onSelect, onEdit, onDelete }) {
+export default function PackageCard({ pkg, isManager, isMember, isReceptionist, onSelect, onEdit, onDelete }) {
   return (
     <div
       className={`rounded-2xl bg-[#0f172a] border transition-all flex flex-col justify-between overflow-hidden shadow-xl ${
@@ -46,13 +46,23 @@ export default function PackageCard({ pkg, isManager, onSelect, onEdit, onDelete
       </div>
 
       <div className="p-4 bg-slate-900/60 border-t border-slate-800/80 flex items-center justify-between gap-2">
-        <button
-          type="button"
-          onClick={() => onSelect(pkg)}
-          className="flex-1 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs transition-colors text-center"
-        >
-          Đăng ký gói này
-        </button>
+        {isMember ? (
+          <button
+            type="button"
+            onClick={() => onSelect(pkg)}
+            className="flex-1 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs transition-colors text-center"
+          >
+            Đăng ký gói này
+          </button>
+        ) : isReceptionist ? (
+          <button
+            type="button"
+            onClick={() => onSelect(pkg)}
+            className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors text-center shadow-md shadow-emerald-600/20"
+          >
+            Đăng ký cho Hội viên
+          </button>
+        ) : null}
 
         {isManager && (
           <div className="flex items-center gap-1.5">

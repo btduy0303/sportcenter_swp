@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import SubscriptionFilterBar from '../../components/dashboard/subscriptions/SubscriptionFilterBar';
 import SubscriptionTable from '../../components/dashboard/subscriptions/SubscriptionTable';
 import SubscriptionCreateModal from '../../components/dashboard/subscriptions/SubscriptionCreateModal';
 import SubscriptionPaymentModal from '../../components/dashboard/subscriptions/SubscriptionPaymentModal';
 
 export default function SubscriptionsPage() {
-  const { user, isReceptionist, isMember } = useAuth();
+  const { user, isManager, isReceptionist, isMember } = useAuth();
+  const toast = useToast();
   const [searchParams] = useSearchParams();
 
   const [subscriptions, setSubscriptions] = useState([]);
@@ -52,11 +54,14 @@ export default function SubscriptionsPage() {
         const onlyMembers = Array.isArray(membersData) ? membersData.filter((u) => u.role === 'MEMBER') : [];
         setUsers(onlyMembers);
 
-        // Fetch subscriptions for selected or first member
-        const targetMemberId = registerForm.userId || onlyMembers[0]?.id;
-        if (targetMemberId) {
+        // Fetch subscriptions for members (up to 15 members)
+        if (onlyMembers.length > 0) {
           try {
-            subsData = await api.getMemberSubscriptionsReceptionist(targetMemberId);
+            const allSubsPromises = onlyMembers.slice(0, 15).map((m) =>
+              api.getMemberSubscriptionsReceptionist(m.id).catch(() => [])
+            );
+            const subsArrays = await Promise.all(allSubsPromises);
+            subsData = subsArrays.flat();
           } catch {
             subsData = [];
           }
@@ -113,33 +118,42 @@ export default function SubscriptionsPage() {
 
   const handleOpenPayment = (sub) => {
     setSelectedSubForPay(sub);
+    setPaymentMethod(isReceptionist ? 'CASH' : 'VIETQR');
     setIsPayOpen(true);
   };
 
   const handleConfirmPayment = async (e) => {
     e.preventDefault();
     try {
-      if (paymentMethod === 'VIETQR' && isMember) {
-        const linkRes = await api.startOnlinePayment(selectedSubForPay.id);
-        if (linkRes && linkRes.checkoutUrl) {
-          setMessage({
-            type: 'success',
-            text: 'Đang chuyển hướng sang cổng thanh toán VietQR / PayOS...',
-          });
-          window.location.href = linkRes.checkoutUrl;
+      if (paymentMethod === 'CASH') {
+        if (!isReceptionist) {
+          toast.warning('Hình thức thanh toán tiền mặt chỉ áp dụng tại quầy do Lễ tân thu tiền.');
           return;
         }
+        await api.payCashAtCounter(selectedSubForPay.id);
+        toast.success(`Thu tiền mặt thành công! Gói tập #${selectedSubForPay.id} đã được kích hoạt.`);
+        setIsPayOpen(false);
+        loadAll();
+        return;
       }
 
-      // Cash payment at counter or default
-      await api.payCashAtCounter(selectedSubForPay.id);
-      setMessage({
-        type: 'success',
-        text: `Thanh toán thành công! Gói tập #${selectedSubForPay.id} đã được kích hoạt.`,
-      });
-      setIsPayOpen(false);
-      loadAll();
+      if (paymentMethod === 'CARD') {
+        toast.info('Hình thức Quẹt thẻ POS tại quầy đang được kết nối thiết bị. Vui lòng chọn Tiền mặt hoặc Chuyển khoản VietQR.');
+        return;
+      }
+
+      // Mặc định: VIETQR / Online Payment
+      const linkRes = await api.startOnlinePayment(selectedSubForPay.id);
+      if (linkRes && linkRes.checkoutUrl) {
+        toast.info('Đang chuyển hướng sang cổng thanh toán VietQR / PayOS...');
+        window.location.href = linkRes.checkoutUrl;
+      } else {
+        toast.success('Yêu cầu thanh toán online đã được ghi nhận.');
+        setIsPayOpen(false);
+        loadAll();
+      }
     } catch (err) {
+      toast.error(err.message || 'Thanh toán thất bại');
       setMessage({ type: 'error', text: err.message || 'Thanh toán thất bại' });
     }
   };
@@ -171,7 +185,7 @@ export default function SubscriptionsPage() {
             onClick={() => setIsRegisterOpen(true)}
             className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs shadow-lg shadow-emerald-500/20"
           >
-            Đăng ký gói mới
+            {isReceptionist ? 'Đăng ký gói cho Hội viên' : 'Đăng ký gói mới'}
           </button>
         )}
       </div>
@@ -223,6 +237,7 @@ export default function SubscriptionsPage() {
         paymentMethod={paymentMethod}
         onMethodChange={setPaymentMethod}
         onSubmit={handleConfirmPayment}
+        isReceptionist={isReceptionist}
       />
     </div>
   );

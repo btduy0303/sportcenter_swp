@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 
 // Common Components
 import TopBanner from './components/common/TopBanner';
@@ -23,6 +24,7 @@ import PackagesPage from './pages/dashboard/PackagesPage';
 import SubscriptionsPage from './pages/dashboard/SubscriptionsPage';
 import PaymentsPage from './pages/dashboard/PaymentsPage';
 import AttendancePage from './pages/dashboard/AttendancePage';
+import ClassesPage from './pages/dashboard/ClassesPage';
 import ProfilePage from './pages/dashboard/ProfilePage';
 
 // Landing Page Wrapper
@@ -70,26 +72,29 @@ function LandingView() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingView />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+    <ToastProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<LandingView />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
 
-          <Route path="/app" element={<DashboardLayout />}>
-            <Route index element={<OverviewPage />} />
-            <Route path="users" element={<UsersPage />} />
-            <Route path="packages" element={<PackagesPage />} />
-            <Route path="subscriptions" element={<SubscriptionsPage />} />
-            <Route path="payments" element={<PaymentsPage />} />
-            <Route path="attendance" element={<AttendancePage />} />
-            <Route path="profile" element={<ProfilePage />} />
-          </Route>
+            <Route path="/app" element={<DashboardLayout />}>
+              <Route index element={<OverviewPage />} />
+              <Route path="users" element={<UsersPage />} />
+              <Route path="packages" element={<PackagesPage />} />
+              <Route path="subscriptions" element={<SubscriptionsPage />} />
+              <Route path="payments" element={<PaymentsPage />} />
+              <Route path="classes" element={<ClassesPage />} />
+              <Route path="attendance" element={<AttendancePage />} />
+              <Route path="profile" element={<ProfilePage />} />
+            </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ToastProvider>
   );
 }

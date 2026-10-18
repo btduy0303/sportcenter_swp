@@ -13,8 +13,15 @@ export default function SubscriptionPaymentModal({
   paymentMethod,
   onMethodChange,
   onSubmit,
+  isReceptionist,
 }) {
   if (!isOpen || !subscription) return null;
+
+  // Nếu là Hội viên: chỉ thanh toán Chuyển khoản VietQR Online
+  // Nếu là Lễ tân tại quầy: có cả Tiền mặt tại quầy và VietQR
+  const availableMethods = isReceptionist
+    ? METHODS
+    : METHODS.filter((m) => m.id === 'VIETQR');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
@@ -49,7 +56,7 @@ export default function SubscriptionPaymentModal({
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-2">Hình thức thanh toán</label>
             <div className="space-y-2">
-              {METHODS.map(({ id, label }) => (
+              {availableMethods.map(({ id, label }) => (
                 <label
                   key={id}
                   className={`flex items-center justify-between p-3 rounded-xl border text-xs cursor-pointer transition-colors ${

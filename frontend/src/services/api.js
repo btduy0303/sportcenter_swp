@@ -390,4 +390,208 @@ export const api = {
       body: JSON.stringify({ subscriptionId: data.subscriptionId }),
     });
   },
+
+  getRecentAttendances: async () => {
+    try {
+      const stored = localStorage.getItem('sportcenter_attendances');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch {
+      // fallback
+    }
+    const defaultData = [
+      { id: 1, userFullName: 'Luong Ba Hung', userEmail: 'member001@example.com', checkInTime: new Date(Date.now() - 3600000).toISOString(), notes: 'Cổng FaceID số 1 - Hợp lệ', recordedBy: 'Nguyen Thi Receptionist' },
+    ];
+    try {
+      localStorage.setItem('sportcenter_attendances', JSON.stringify(defaultData));
+    } catch {
+      // ignore
+    }
+    return defaultData;
+  },
+
+  checkIn: async (data) => {
+    const stored = localStorage.getItem('sportcenter_attendances');
+    let list = stored ? JSON.parse(stored) : [];
+    const newEntry = {
+      id: Date.now(),
+      userId: data.userId,
+      userFullName: data.userFullName || 'Hội viên',
+      notes: data.notes || 'Cổng FaceID số 1',
+      checkInTime: new Date().toISOString(),
+      checkOutTime: null,
+      recordedBy: data.recordedBy || 'Lễ tân tại quầy',
+    };
+    list = [newEntry, ...list];
+    localStorage.setItem('sportcenter_attendances', JSON.stringify(list));
+    return newEntry;
+  },
+
+  checkOut: async (attId) => {
+    const stored = localStorage.getItem('sportcenter_attendances');
+    let list = stored ? JSON.parse(stored) : [];
+    list = list.map((item) => {
+      if (item.id === attId) {
+        return { ...item, checkOutTime: new Date().toISOString() };
+      }
+      return item;
+    });
+    localStorage.setItem('sportcenter_attendances', JSON.stringify(list));
+    return { success: true };
+  },
+
+  // ===================== FLOW 2: SPORT CATEGORIES =====================
+  getSportCategories: async () => {
+    return request('/sport-categories', { method: 'GET' });
+  },
+
+  getSportCategoryById: async (id) => {
+    return request(`/sport-categories/${id}`, { method: 'GET' });
+  },
+
+  createSportCategory: async (data) => {
+    return request('/sport-categories', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateSportCategory: async (id, data) => {
+    return request(`/sport-categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteSportCategory: async (id) => {
+    return request(`/sport-categories/${id}`, { method: 'DELETE' });
+  },
+
+  // ===================== FLOW 2: FACILITY ROOMS =====================
+  getRooms: async () => {
+    return request('/rooms', { method: 'GET' });
+  },
+
+  getRoomById: async (id) => {
+    return request(`/rooms/${id}`, { method: 'GET' });
+  },
+
+  createRoom: async (data) => {
+    return request('/rooms', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateRoom: async (id, data) => {
+    return request(`/rooms/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteRoom: async (id) => {
+    return request(`/rooms/${id}`, { method: 'DELETE' });
+  },
+
+  // ===================== FLOW 2: SPORT CLASSES =====================
+  getSportClasses: async () => {
+    return request('/sport-classes', { method: 'GET' });
+  },
+
+  getSportClassById: async (id) => {
+    return request(`/sport-classes/${id}`, { method: 'GET' });
+  },
+
+  createSportClass: async (data) => {
+    return request('/sport-classes', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateSportClass: async (id, data) => {
+    return request(`/sport-classes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // ===================== FLOW 2: CLASS SCHEDULES =====================
+  getAllClassSchedules: async () => {
+    return request('/class-schedules', { method: 'GET' });
+  },
+
+  getClassScheduleById: async (id) => {
+    return request(`/class-schedules/${id}`, { method: 'GET' });
+  },
+
+  getSchedulesByClassId: async (classId) => {
+    return request(`/class-schedules/class/${classId}`, { method: 'GET' });
+  },
+
+  getSchedulesByDayOfWeek: async (dayOfWeek) => {
+    return request(`/class-schedules/day/${dayOfWeek}`, { method: 'GET' });
+  },
+
+  getCoachMySchedules: async () => {
+    return request('/class-schedules/coach/me', { method: 'GET' });
+  },
+
+  createClassSchedule: async (data) => {
+    return request('/class-schedules', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateClassSchedule: async (id, data) => {
+    return request(`/class-schedules/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteClassSchedule: async (id) => {
+    return request(`/class-schedules/${id}`, { method: 'DELETE' });
+  },
+
+  // ===================== FLOW 2: CLASS REGISTRATIONS =====================
+  // Member
+  registerMyClass: async (classId, joinWaitlist = false) => {
+    return request(`/member/class-registrations/${classId}?joinWaitlist=${joinWaitlist}`, {
+      method: 'POST',
+    });
+  },
+
+  cancelMyClassRegistration: async (registrationId) => {
+    return request(`/member/class-registrations/${registrationId}/cancel`, {
+      method: 'PATCH',
+    });
+  },
+
+  getMyClassRegistrations: async () => {
+    return request('/member/class-registrations/me', { method: 'GET' });
+  },
+
+  // Receptionist
+  registerMemberClassByReceptionist: async (data, joinWaitlist = false) => {
+    return request(`/receptionist/class-registrations?joinWaitlist=${joinWaitlist}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  cancelMemberClassRegistrationByReceptionist: async (registrationId) => {
+    return request(`/receptionist/class-registrations/${registrationId}/cancel`, {
+      method: 'PATCH',
+    });
+  },
+
+  getMemberClassRegistrationsByReceptionist: async (memberId) => {
+    return request(`/receptionist/members/${memberId}/class-registrations`, {
+      method: 'GET',
+    });
+  },
 };

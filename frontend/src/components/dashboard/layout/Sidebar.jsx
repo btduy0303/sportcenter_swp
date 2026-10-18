@@ -1,20 +1,34 @@
 import React, { useState } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { useToast } from '../../../context/ToastContext';
 
 export default function Sidebar({ isOpen, onClose }) {
-  const { user, logout, switchDemoRole, isReceptionist } = useAuth();
+  const auth = useAuth() || {};
+  const { user, logout } = auth;
+  const toast = useToast();
   const navigate = useNavigate();
-  const [roleMenuOpen, setRoleMenuOpen] = useState(false);
+
+  // Phân quyền hiển thị Menu theo từng vai trò rõ ràng:
+  // - Manager: Xem Tổng quan, Quản lý Người dùng, Gói tập, Lớp học & Lịch tập, Thu phí & Hóa đơn, Hồ sơ
+  // - Receptionist: Xem Tổng quan, Quản lý Hội viên, Đăng ký & Gia hạn, Lớp học & Lịch tập, Điểm danh, Thu phí & Hóa đơn, Hồ sơ
+  // - Coach: Xem Lớp học & Lịch dạy, Hồ sơ cá nhân
+  // - Member: Xem Gói tập, Đăng ký gói của mình, Lớp học & Lịch tập, Lịch sử thanh toán, Hồ sơ
+  const isManager = user?.role === 'MANAGER';
+  const isReceptionistOnly = user?.role === 'RECEPTIONIST';
+  const isStaff = isManager || isReceptionistOnly;
+  const isCoach = user?.role === 'COACH';
+  const isMember = user?.role === 'MEMBER';
 
   const navItems = [
-    { to: '/app', label: 'Tổng quan' },
-    { to: '/app/users', label: 'Quản lý Người dùng', show: isReceptionist },
-    { to: '/app/packages', label: 'Gói tập thể thao' },
-    { to: '/app/subscriptions', label: 'Đăng ký & Gia hạn' },
-    { to: '/app/attendance', label: 'Điểm danh ra vào', show: isReceptionist },
-    { to: '/app/payments', label: 'Thu phí & Hóa đơn', show: isReceptionist },
-    { to: '/app/profile', label: 'Hồ sơ cá nhân' },
+    { to: '/app', label: 'Tổng quan', show: isStaff },
+    { to: '/app/users', label: isManager ? 'Quản lý Tài khoản' : 'Danh sách Hội viên', show: isStaff },
+    { to: '/app/packages', label: 'Gói tập thể thao', show: isManager || isMember },
+    { to: '/app/subscriptions', label: isMember ? 'Gói tập của tôi' : 'Hợp đồng & Gia hạn', show: isReceptionistOnly || isMember },
+    { to: '/app/classes', label: isCoach ? 'Lịch dạy phụ trách' : 'Lớp học & Thời khóa biểu', show: true },
+    { to: '/app/attendance', label: 'Điểm danh ra vào', show: isReceptionistOnly },
+    { to: '/app/payments', label: isMember ? 'Lịch sử thanh toán' : 'Thu phí & Hóa đơn', show: !isCoach },
+    { to: '/app/profile', label: 'Hồ sơ cá nhân', show: true },
   ].filter((item) => item.show !== false);
 
   const roleLabels = {
@@ -24,13 +38,10 @@ export default function Sidebar({ isOpen, onClose }) {
     MEMBER: { label: 'Hội viên', color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
   };
 
-  const handleRoleChange = (role) => {
-    switchDemoRole(role);
-    setRoleMenuOpen(false);
-  };
 
   const handleLogout = () => {
     logout();
+    toast.info('Bạn đã đăng xuất khỏi hệ thống.');
     navigate('/login');
   };
 
@@ -61,17 +72,10 @@ export default function Sidebar({ isOpen, onClose }) {
           </Link>
         </div>
 
-        <div className="relative">
+        <div>
           <div className="bg-slate-900/90 rounded-xl p-3 border border-slate-800">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-medium text-slate-400">Tài khoản</span>
-              <button
-                type="button"
-                onClick={() => setRoleMenuOpen(!roleMenuOpen)}
-                className="text-[10px] font-semibold text-emerald-400 hover:underline"
-              >
-                Đổi vai trò ▾
-              </button>
             </div>
 
             <div className="flex items-center gap-2.5">
@@ -92,25 +96,6 @@ export default function Sidebar({ isOpen, onClose }) {
               </div>
             </div>
           </div>
-
-          {roleMenuOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1.5 bg-[#0f172a] border border-slate-700 rounded-xl p-1.5 shadow-xl z-50">
-              <p className="text-[10px] text-slate-400 px-2 py-1">Chọn vai trò demo:</p>
-              {Object.keys(roleLabels).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => handleRoleChange(r)}
-                  className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-between hover:bg-slate-800 ${
-                    user?.role === r ? 'text-emerald-400 bg-emerald-950/40' : 'text-slate-300'
-                  }`}
-                >
-                  <span>{roleLabels[r].label}</span>
-                  {user?.role === r && <span className="text-emerald-400 text-xs">✓</span>}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         <nav className="space-y-1">
@@ -121,14 +106,14 @@ export default function Sidebar({ isOpen, onClose }) {
               end={item.to === '/app'}
               onClick={onClose}
               className={({ isActive }) =>
-                `block px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                `flex items-center px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors ${
                   isActive
-                    ? 'bg-emerald-500 text-white font-bold'
+                    ? 'bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-500/20'
                     : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                 }`
               }
             >
-              {item.label}
+              <span>{item.label}</span>
             </NavLink>
           ))}
         </nav>

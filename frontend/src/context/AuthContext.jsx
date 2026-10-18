@@ -89,14 +89,14 @@ export const AuthProvider = ({ children }) => {
 
   const switchDemoRole = async (roleCode) => {
     const accounts = {
-      MANAGER: { email: 'manager@sportcenter.vn', name: 'Trần Văn Quản Lý' },
-      RECEPTIONIST: { email: 'receptionist@sportcenter.vn', name: 'Lê Thuỳ Lễ Tân' },
-      MEMBER: { email: 'an.nguyen@gmail.com', name: 'Nguyễn Văn An' },
-      COACH: { email: 'coach@sportcenter.vn', name: 'Nguyễn Tuấn Kiệt (Coach)' },
+      MANAGER: { email: 'manager@test.local', pass: 'luongbahung123', name: 'Center Manager' },
+      RECEPTIONIST: { email: 'receptionist02@example.com', pass: 'Reception@123', name: 'Nguyen Thi Receptionist' },
+      MEMBER: { email: 'member001@example.com', pass: '12345678', name: 'Luong Ba Hung' },
+      COACH: { email: 'coach01@example.com', pass: 'Coach@12345', name: 'Nguyen Van Coach' },
     };
     const target = accounts[roleCode] || accounts.MANAGER;
     try {
-      await login(target.email, '123456');
+      await login(target.email, target.pass);
     } catch {
       setUser({
         id: 1,
@@ -120,7 +120,7 @@ export const AuthProvider = ({ children }) => {
         switchDemoRole,
         isAuthenticated: !!user,
         isManager: user?.role === 'MANAGER',
-        isReceptionist: user?.role === 'RECEPTIONIST' || user?.role === 'MANAGER',
+        isReceptionist: user?.role === 'RECEPTIONIST',
         isMember: user?.role === 'MEMBER',
       }}
     >

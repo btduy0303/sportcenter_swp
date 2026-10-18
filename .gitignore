@@ -3,6 +3,7 @@
 # ========================
 .env.backend
 *.env.local
+.env
 
 # ========================
 # Node.js / Frontend

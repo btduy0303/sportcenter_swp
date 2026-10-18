@@ -19,21 +19,37 @@ export default function AttendancePage() {
 
   const loadData = async () => {
     try {
-      const [atts, usersData, subsData] = await Promise.all([
-        api.getRecentAttendances(),
-        api.searchUsers('', 'MEMBER'),
-        api.getAllSubscriptions(),
-      ]);
-      setAttendances(atts);
-      setMembers(usersData);
-      setSubscriptions(subsData);
+      let usersData = [];
+      try {
+        usersData = await api.searchReceptionistMembers('');
+      } catch (e) {
+        console.error('Failed to load members for attendance', e);
+      }
+      
+      const atts = await api.getRecentAttendances();
+      setAttendances(Array.isArray(atts) ? atts : []);
+      
+      const memberList = Array.isArray(usersData) ? usersData : [];
+      setMembers(memberList);
 
-      if (usersData.length > 0 && !selectedUserId) {
-        setSelectedUserId(usersData[0].id);
-        setSelectedUserObj(usersData[0]);
+      if (memberList.length > 0) {
+        const currentSelectedId = selectedUserId || memberList[0].id;
+        const currentMember = memberList.find((m) => m.id === Number(currentSelectedId)) || memberList[0];
+        setSelectedUserId(currentMember.id);
+        setSelectedUserObj(currentMember);
+        loadMemberSubscriptions(currentMember.id);
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const loadMemberSubscriptions = async (memberId) => {
+    try {
+      const subs = await api.getMemberSubscriptionsReceptionist(memberId);
+      setSubscriptions(Array.isArray(subs) ? subs : []);
+    } catch {
+      setSubscriptions([]);
     }
   };
 
@@ -41,22 +57,43 @@ export default function AttendancePage() {
     setSelectedUserId(userId);
     const found = members.find((m) => m.id === Number(userId));
     setSelectedUserObj(found || null);
+    if (found) {
+      loadMemberSubscriptions(found.id);
+    }
   };
 
-  const memberActiveSubs = selectedUserObj
-    ? subscriptions.filter((s) => s.userId === selectedUserObj.id && s.status === 'ACTIVE')
-    : [];
+  const memberActiveSubs = subscriptions.filter((s) => s.status === 'ACTIVE');
+  const activeInFacility = attendances.filter((a) => !a.checkOutTime);
+  const isAlreadyInFacility = activeInFacility.some((a) => a.userId === Number(selectedUserId));
 
   const handleCheckIn = async (e) => {
     e.preventDefault();
     if (!selectedUserId) return;
+
+    if (isAlreadyInFacility) {
+      setMessage({
+        type: 'warning',
+        text: `Hội viên "${selectedUserObj?.fullName || 'này'}" hiện ĐANG CÓ MẶT trong cơ sở! Cần Check-out trước khi có thể Check-in lại.`,
+      });
+      return;
+    }
+
+    if (memberActiveSubs.length === 0) {
+      setMessage({
+        type: 'error',
+        text: `Hội viên "${selectedUserObj?.fullName || 'này'}" chưa có gói tập hợp lệ (ACTIVE). Không thể mở cổng check-in!`,
+      });
+      return;
+    }
     try {
+      const memberName = selectedUserObj?.fullName || 'Hội viên';
       await api.checkIn({
         userId: Number(selectedUserId),
+        userFullName: memberName,
         notes: checkInNotes,
+        recordedBy: 'Lễ tân tại quầy',
       });
 
-      const memberName = selectedUserObj?.fullName || 'Hội viên';
       setMessage({
         type: 'success',
         text: `Check-in thành công cho ${memberName}! Đã mở cổng kiểm soát.`,
@@ -79,8 +116,6 @@ export default function AttendancePage() {
       setMessage({ type: 'error', text: err.message || 'Lỗi khi check-out' });
     }
   };
-
-  const activeInFacility = attendances.filter((a) => !a.checkOutTime);
 
   return (
     <div className="space-y-6">
@@ -115,6 +150,7 @@ export default function AttendancePage() {
         onUserSelect={handleUserSelect}
         selectedUserObj={selectedUserObj}
         memberActiveSubs={memberActiveSubs}
+        isAlreadyInFacility={isAlreadyInFacility}
         checkInNotes={checkInNotes}
         onNotesChange={setCheckInNotes}
         onCheckIn={handleCheckIn}

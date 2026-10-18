@@ -6,6 +6,7 @@ export default function CheckInPanel({
   onUserSelect,
   selectedUserObj,
   memberActiveSubs,
+  isAlreadyInFacility,
   checkInNotes,
   onNotesChange,
   onCheckIn,
@@ -30,17 +31,32 @@ export default function CheckInPanel({
               onChange={(e) => onUserSelect(e.target.value)}
               className="w-full bg-slate-900 border border-slate-700/80 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-emerald-500"
             >
-              {members.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.fullName} — SĐT: {m.phone}
-                </option>
-              ))}
+              {members.length === 0 ? (
+                <option value="">Đang tải danh sách hội viên...</option>
+              ) : (
+                members.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.fullName} — SĐT: {m.phone || 'Chưa cập nhật'} (ID: #{m.id})
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
           {selectedUserObj && (
-            <div className="bg-slate-900/90 rounded-xl p-3 border border-slate-800 space-y-1.5 text-xs">
+            <div className="bg-slate-900/90 rounded-xl p-3 border border-slate-800 space-y-2 text-xs">
               <div className="flex items-center justify-between">
+                <span className="text-slate-400">Trạng thái cơ sở:</span>
+                {isAlreadyInFacility ? (
+                  <span className="font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                    ĐANG CÓ MẶT
+                  </span>
+                ) : (
+                  <span className="text-slate-400 font-medium">Chưa vào cơ sở</span>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between pt-1 border-t border-slate-800/80">
                 <span className="text-slate-400">Tình trạng gói tập:</span>
                 {memberActiveSubs.length > 0 ? (
                   <span className="font-bold text-emerald-400">
@@ -54,7 +70,7 @@ export default function CheckInPanel({
               </div>
 
               {memberActiveSubs.length > 0 && (
-                <div className="text-[11px] text-slate-300 pt-1 border-t border-slate-800">
+                <div className="text-[11px] text-slate-300 pt-1 border-t border-slate-800/80">
                   <div>Gói: <strong>{memberActiveSubs[0].packageNameSnapshot}</strong></div>
                   <div>Hạn dùng: Đến {memberActiveSubs[0].endDate}</div>
                 </div>
@@ -77,9 +93,20 @@ export default function CheckInPanel({
 
           <button
             type="submit"
-            className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 transition-colors"
+            disabled={memberActiveSubs.length === 0 || isAlreadyInFacility}
+            className={`w-full py-2.5 rounded-xl font-bold text-xs transition-colors ${
+              isAlreadyInFacility
+                ? 'bg-blue-950/40 text-blue-400 border border-blue-800/60 cursor-not-allowed'
+                : memberActiveSubs.length > 0
+                ? 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-lg shadow-emerald-500/20 cursor-pointer'
+                : 'bg-slate-800 text-slate-500 border border-slate-700/60 cursor-not-allowed'
+            }`}
           >
-            Xác nhận Check-In
+            {isAlreadyInFacility
+              ? 'Đang có mặt trong cơ sở (Cần Check-Out trước)'
+              : memberActiveSubs.length > 0
+              ? 'Xác nhận Check-In'
+              : 'Không thể Check-In (Chưa có gói tập)'}
           </button>
         </form>
       </div>

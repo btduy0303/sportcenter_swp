@@ -1,10 +1,26 @@
 import React, { useState } from 'react';
-import { ChevronDown, Menu, X, Dumbbell } from 'lucide-react';
+import { ChevronDown, Menu, X, Dumbbell, User, LogOut, LayoutDashboard } from 'lucide-react';
 import { navigationData } from '../../data/sportCenterData';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 
 export default function Navbar({ onOpenDemo }) {
+  const { user, isAuthenticated, logout } = useAuth();
+  const toast = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
+
+  const handleLogout = () => {
+    logout();
+    toast.info('Bạn đã đăng xuất khỏi hệ thống.');
+  };
+
+  const roleLabels = {
+    MANAGER: 'Quản lý',
+    RECEPTIONIST: 'Lễ tân',
+    COACH: 'Huấn luyện viên',
+    MEMBER: 'Hội viên',
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-[#080d1a]/90 backdrop-blur-md border-b border-slate-800/80">
@@ -117,12 +133,43 @@ export default function Navbar({ onOpenDemo }) {
               Hotline: 1900 6868
             </a>
 
-            <a
-              href="/login"
-              className="text-xs font-bold px-4 py-2.5 rounded-xl text-slate-200 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 transition-all text-center"
-            >
-              Đăng nhập
-            </a>
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2.5">
+                <a
+                  href="/app"
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 text-white transition-all shadow-md group"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-xs">
+                    {user?.fullName?.charAt(0) || 'U'}
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors max-w-[140px] truncate">
+                      {user?.fullName || 'Tài khoản'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      {roleLabels[user?.role] || user?.role || 'Hội viên'}
+                    </span>
+                  </div>
+                  <LayoutDashboard className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors ml-1" />
+                </a>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  title="Đăng xuất"
+                  className="p-2.5 rounded-xl bg-slate-800/60 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 border border-slate-700/60 hover:border-rose-700/60 transition-all cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <a
+                href="/login"
+                className="text-xs font-bold px-4 py-2.5 rounded-xl text-slate-200 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 transition-all text-center"
+              >
+                Đăng nhập
+              </a>
+            )}
 
             <button
               type="button"
@@ -134,12 +181,21 @@ export default function Navbar({ onOpenDemo }) {
           </div>
 
           <div className="flex lg:hidden items-center gap-2">
-            <a
-              href="/login"
-              className="px-3 py-1.5 text-xs font-bold text-slate-200 bg-slate-800 rounded-lg"
-            >
-              Đăng nhập
-            </a>
+            {isAuthenticated ? (
+              <a
+                href="/app"
+                className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 rounded-lg max-w-[120px] truncate"
+              >
+                {user?.fullName || 'Vào App'}
+              </a>
+            ) : (
+              <a
+                href="/login"
+                className="px-3 py-1.5 text-xs font-bold text-slate-200 bg-slate-800 rounded-lg"
+              >
+                Đăng nhập
+              </a>
+            )}
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -174,12 +230,34 @@ export default function Navbar({ onOpenDemo }) {
           >
             Hệ sinh thái SportCenter
           </a>
-          <a
-            href="/login"
-            className="block px-3 py-2 text-sm font-bold text-white bg-slate-800 rounded-lg"
-          >
-            Đăng nhập hệ thống
-          </a>
+          {isAuthenticated ? (
+            <>
+              <a
+                href="/app"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2 text-sm font-bold text-emerald-400 bg-slate-800/80 rounded-lg border border-slate-700"
+              >
+                Vào Dashboard ({user?.fullName})
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleLogout();
+                }}
+                className="w-full text-left px-3 py-2 text-sm font-bold text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors"
+              >
+                Đăng xuất
+              </button>
+            </>
+          ) : (
+            <a
+              href="/login"
+              className="block px-3 py-2 text-sm font-bold text-white bg-slate-800 rounded-lg"
+            >
+              Đăng nhập hệ thống
+            </a>
+          )}
           <div className="pt-2">
             <button
               type="button"

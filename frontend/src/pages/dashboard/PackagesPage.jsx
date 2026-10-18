@@ -6,7 +6,7 @@ import PackageCard from '../../components/dashboard/packages/PackageCard';
 import PackageFormModal from '../../components/dashboard/packages/PackageFormModal';
 
 export default function PackagesPage() {
-  const { isManager } = useAuth();
+  const { isManager, isMember, isReceptionist } = useAuth();
   const navigate = useNavigate();
 
   const [packages, setPackages] = useState([]);
@@ -153,6 +153,8 @@ export default function PackagesPage() {
             key={pkg.id}
             pkg={pkg}
             isManager={isManager}
+            isMember={isMember}
+            isReceptionist={isReceptionist}
             onSelect={(p) => navigate(`/app/subscriptions?packageId=${p.id}`)}
             onEdit={handleOpenEdit}
             onDelete={handleDeletePackage}
